@@ -1,49 +1,57 @@
-# Skill Suggestion
+# skill-suggestion
 
-A Claude Code plugin that scores each submitted user prompt against a project-defined catalog of skills and injects a ranked suggestion banner into the model's context for the current turn.
+`UserPromptSubmit` hook that scores every skill in your `rules.json` against the submitted prompt and prints a ranked suggestion banner so Claude sees it alongside the user's message.
 
-## How It Works
-
-The plugin registers a `UserPromptSubmit` hook that:
-
-1. Reads `$CLAUDE_PROJECT_DIR/.claude/skill-suggestion/rules.json`.
-2. Scores every skill in `rules.json` against the prompt:
-   - `score = keywords*KW + intentPatterns*IW + pathPatterns*PW`
-3. Skips skills whose `excludePatterns` match, or whose `plugin` field is not present in any enabled scope's `enabledPlugins`.
-4. Emits a ranked banner via `hookSpecificOutput.additionalContext` so Claude sees the suggestions.
-5. Appends a per-skill scoring trace to `$CLAUDE_PROJECT_DIR/.claude/skill-suggestion/skill-suggestion.log`.
-
-If `rules.json` is missing the hook silently exits — the plugin can be safely enabled in projects that haven't opted in.
-
-## Installation
-
-### Add the Marketplace
+## Scoring
 
 ```
-/plugin marketplace add pavliuko/claude-plugins
+score = keywords*KW + intentPatterns*IW + pathPatterns*PW
 ```
 
-### Install the Plugin
+A skill is suggested when `score >= confidenceThreshold` and no `excludePatterns` substring matches the prompt. Weights, thresholds and confidence cut-offs come from `rules.json` → `.config.scoring`.
+
+## Project layout
+
+The hook reads and writes everything under one directory in your project:
 
 ```
-/plugin install skill-suggestion@pavliuko
+$CLAUDE_PROJECT_DIR/.claude/skill-suggestion/
+├── rules.json              # you create this — skills + scoring config
+└── skill-suggestion.log    # per-prompt scoring trace, created on first run
 ```
 
-## Setup
+If `rules.json` is missing the hook silently no-ops, so installing the plugin is harmless until you opt in.
 
-Create `.claude/skill-suggestion/rules.json` in your project. Example:
+## rules.json shape
 
-```json
+```jsonc
 {
   "skills": {
     "managing-commits": {
       "description": "Commits changes following project conventions.",
       "promptTriggers": {
         "keywords": ["commit"],
-        "intentPatterns": [
-          "(create|make|write|add).*(commit)"
-        ],
+        "intentPatterns": ["(create|make|write).*(commit)"],
         "pathPatterns": [],
+        "excludePatterns": []
+      }
+    },
+    "managing-prs": {
+      "plugin": "managing-prs@pavliuko",
+      "description": "Creates or edits a GitHub Pull Request.",
+      "promptTriggers": {
+        "keywords": ["pull request", "PR"],
+        "intentPatterns": ["(create|open).*(pr|pull request)"],
+        "pathPatterns": [],
+        "excludePatterns": []
+      }
+    },
+    "developing-swift-style": {
+      "description": "Swift/iOS coding convention router. Use when working with .swift files.",
+      "promptTriggers": {
+        "keywords": ["swift", "swiftui", "code style"],
+        "intentPatterns": ["(refactor|rename|format).*(struct|class|protocol|view|test)"],
+        "pathPatterns": ["*.swift", "**/*.swift"],
         "excludePatterns": []
       }
     }
@@ -62,34 +70,24 @@ Create `.claude/skill-suggestion/rules.json` in your project. Example:
 }
 ```
 
-### Skill Fields
-
-- `description` — shown in the suggestion banner.
-- `plugin` (optional) — gates the skill on `enabledPlugins`. If set, the skill only fires when the named plugin is enabled in user, project, or project-local settings.
-- `promptTriggers.keywords` — case-insensitive fixed-string matches.
-- `promptTriggers.intentPatterns` — extended regex (`grep -E`) matched against the lowercased prompt.
-- `promptTriggers.pathPatterns` — bash globs (`globstar`, `extglob`, `nocaseglob`) matched against `Foo.swift` / `@path/to/file.json` style tokens extracted from the prompt.
-- `promptTriggers.excludePatterns` — case-insensitive substring match; any hit vetoes the skill regardless of score.
-
-### Config Fields
-
-- `maxSkillsPerPrompt` — cap on banner detail entries (extras render as a one-line "also matched" footer). Default `3`.
-- `scoring.keywordWeight` — default `2`.
-- `scoring.intentWeight` — default `3`.
-- `scoring.pathWeight` — default `2`.
-- `scoring.confidenceThreshold` — minimum score for a skill to be suggested. Default `3`.
-- `scoring.highConfidenceScore` — score for the 🟢 HIGH label. Default `6`.
-- `scoring.mediumConfidenceScore` — score for the 🟡 MEDIUM label. Default `4`.
-
-## Files
-
-- `$CLAUDE_PROJECT_DIR/.claude/skill-suggestion/rules.json` — skill catalog (you provide).
-- `$CLAUDE_PROJECT_DIR/.claude/skill-suggestion/skill-suggestion.log` — per-prompt scoring trace (auto-created).
+If a skill entry has a `plugin` field, the hook only considers it when that plugin is enabled in any of `~/.claude/settings.json`, `$CLAUDE_PROJECT_DIR/.claude/settings.json`, or `$CLAUDE_PROJECT_DIR/.claude/settings.local.json`.
 
 ## Requirements
 
-- `bash`, `jq`, `grep`, `sed`, `sort` (all preinstalled on macOS).
+- `jq`
+- `bash` 3.2+ (works on stock macOS bash)
 
-## License
+## Install
 
-MIT
+```sh
+/plugin marketplace add pavliuko/claude-plugins
+/plugin install skill-suggestion@pavliuko
+```
+
+Then create `$CLAUDE_PROJECT_DIR/.claude/skill-suggestion/rules.json` for the project.
+
+## Notes
+
+- The hook always exits 0; it never blocks the prompt.
+- Logs are append-only — rotate or delete `skill-suggestion.log` yourself if it grows.
+- Path matching uses bash globs with `globstar`/`extglob`/`nocaseglob`, so `**/*.swift` works.
