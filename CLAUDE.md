@@ -11,10 +11,13 @@ Swift Concurrency Reviewer is a Claude Code plugin that reviews Swift code for c
 - Don’t delete/rename unexpected stuff; stop + ask.
 - No amend unless asked.
 
-## Mindset
+## Skills Name Convention
 
-- Fix root cause (not band-aid).
-- Unsure: read more code; if still stuck, ask w/ short options.
-- Conflicts: call out; pick safer path.
-- Write idiomatic, simple, maintainable Markdown for plugin commands and agents. Always ask yourself if this is the most simple intuitive solution to the problem. 
+Use **gerund form** (verb + -ing) for skill names. Lowercase letters, numbers, and hyphens only.
 
+Stable categories:
+
+- **`managing-`** — Project management: commits, PRs, issues, time tracking, branching, docs.
+- **`developing-`** — Writing and understanding code: explanation, generation, debugging, refactoring.
+
+Examples: `managing-prs`, `developing-code-explain`.
