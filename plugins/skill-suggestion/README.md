@@ -110,12 +110,48 @@ Mix both freely in one `rules.json`: project skills for conventions specific to 
 
 ## Install
 
+**1. Add the marketplace and install the plugin**
+
 ```sh
 /plugin marketplace add pavliuko/claude-plugins
 /plugin install skill-suggestion@pavliuko
 ```
 
-Then create `$CLAUDE_PROJECT_DIR/.claude/skill-suggestion/rules.json` for the project.
+**2. Create `rules.json` in your project**
+
+The hook does **not** create this file for you — without it, the hook silently no-ops on every prompt. Drop a starter file at `.claude/skill-suggestion/rules.json`:
+
+```sh
+mkdir -p .claude/skill-suggestion
+cat > .claude/skill-suggestion/rules.json <<'JSON'
+{
+  "skills": {
+    "managing-commits": {
+      "description": "Commits changes following project conventions.",
+      "promptTriggers": {
+        "keywords": ["commit"],
+        "intentPatterns": ["(create|make|write).*(commit)"],
+        "pathPatterns": [],
+        "excludePatterns": []
+      }
+    }
+  },
+  "config": {
+    "maxSkillsPerPrompt": 3,
+    "scoring": {
+      "keywordWeight": 2,
+      "intentWeight": 3,
+      "pathWeight": 2,
+      "confidenceThreshold": 3,
+      "highConfidenceScore": 6,
+      "mediumConfidenceScore": 4
+    }
+  }
+}
+JSON
+```
+
+Add more skills as needed — see the [`rules.json` shape](#rulesjson-shape) and [skill sources](#skill-sources) sections above.
 
 ## Notes
 
