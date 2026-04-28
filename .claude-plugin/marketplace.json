@@ -30,6 +30,25 @@
         "async-await"
       ],
       "category": "development"
+    },
+    {
+      "name": "skill-suggestion",
+      "source": "./plugins/skill-suggestion",
+      "description": "Scores user prompts against project-defined skill triggers and injects a ranked suggestion banner into the model's context.",
+      "version": "1.0.0",
+      "author": {
+        "name": "pavliuko",
+        "email": "pavliuk.aleksandr@gmail.com"
+      },
+      "repository": "https://github.com/pavliuko/claude-plugins",
+      "license": "MIT",
+      "keywords": [
+        "skills",
+        "hooks",
+        "user-prompt-submit",
+        "suggestion"
+      ],
+      "category": "productivity"
     }
   ]
 }
