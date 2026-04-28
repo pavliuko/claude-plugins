@@ -70,7 +70,38 @@ If `rules.json` is missing the hook silently no-ops, so installing the plugin is
 }
 ```
 
-If a skill entry has a `plugin` field, the hook only considers it when that plugin is enabled in any of `~/.claude/settings.json`, `$CLAUDE_PROJECT_DIR/.claude/settings.json`, or `$CLAUDE_PROJECT_DIR/.claude/settings.local.json`.
+## Skill sources
+
+A skill in `rules.json` is just a name plus triggers — the hook itself doesn't load skill content. Where Claude actually finds the skill depends on whether the entry has a `plugin` field.
+
+### Project skill (no `plugin` field)
+
+The skill lives in your project at `.claude/skills/<name>/SKILL.md`. The banner renders the path so Claude can read it directly:
+
+```
+📚 managing-commits
+   Description: Commits changes following project conventions.
+   Confidence: 🟡 MEDIUM (score: 5)
+   Path: .claude/skills/managing-commits/SKILL.md
+```
+
+You manage it like any other file in the repo. No marketplace, no install step — just create `.claude/skills/managing-commits/SKILL.md` and reference the name in `rules.json`.
+
+### Plugin skill (`plugin: "<name>@<marketplace>"`)
+
+The skill is shipped by an installed plugin and invoked by name through the `Skill` tool. The banner makes that explicit:
+
+```
+📚 managing-prs
+   Description: Creates or edits a GitHub Pull Request.
+   Confidence: 🟢 HIGH (score: 7)
+   Plugin: managing-prs@pavliuko
+   Invoke: managing-prs
+```
+
+The hook only considers a plugin-backed skill when that plugin is listed under `enabledPlugins` in any of `~/.claude/settings.json`, `$CLAUDE_PROJECT_DIR/.claude/settings.json`, or `$CLAUDE_PROJECT_DIR/.claude/settings.local.json`. Skills whose plugin isn't enabled in any scope are silently skipped (and logged) — Claude couldn't invoke them anyway.
+
+Mix both freely in one `rules.json`: project skills for conventions specific to the repo, plugin skills for reusable workflows you've installed from a marketplace.
 
 ## Requirements
 
