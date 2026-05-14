@@ -1,0 +1,18 @@
+{
+  "name": "managing-skills",
+  "version": "1.0.0",
+  "description": "Authoring guide for creating and editing project-level Claude Code skills and slash commands.",
+  "author": {
+    "name": "pavliuko",
+    "email": "pavliuk.aleksandr@gmail.com"
+  },
+  "repository": "https://github.com/pavliuko/claude-plugins",
+  "license": "MIT",
+  "keywords": [
+    "skills",
+    "slash-commands",
+    "authoring",
+    "productivity"
+  ],
+  "category": "productivity"
+}
