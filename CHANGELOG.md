@@ -23,6 +23,15 @@ Format:
 - Rewrote `## Naming Conventions` in `skill-anatomy.md` as a comparison table (Skills vs Commands) — the previous bullet-list structure was hard to read after multiple edits. User request: "update structure of ## Naming Conventions it is hard to read now".
 - Moved CHANGELOG instructions from `SKILL.md` to repo-root `CLAUDE.md` and consolidated per-plugin changelogs into a single repo-root `CHANGELOG.md` — per-plugin files were redundant once the rule became repo-wide. User request: "move instructions about CHANGELOG.md from skill to CLAUDE.md" and "let's combine changelog in a single file and move it to the root of the repo".
 
+## 2026-05-14 [building-skills] (session 2)
+
+- Aligned progressive disclosure content with the official Anthropic docs (`platform.claude.com/docs/…/best-practices#progressive-disclosure-patterns`). Five changes:
+  1. Dropped "ranked by how often we use them in this repo" framing in `SKILL.md` — neutral guidance shouldn't encode repo-internal opinion.
+  2. Added explicit "don't mix" rule to `SKILL.md`'s pattern list.
+  3. Expanded the one-level-deep bullet in `SKILL.md` into its own note with a bad/good tree example — matches the prominence the official docs give this constraint.
+  4. Added `scripts/` to the canonical directory tree in `skill-anatomy.md` — docs show it as a first-class peer alongside `references/` and `templates/`.
+  5. Expanded all three pattern descriptions in `skill-anatomy.md` with concrete directory-tree + markdown examples — previously each was a 1–2 sentence stub; the official docs show full examples for each. Reference: user request "implement actionable recommendations" from gap analysis against the official docs.
+
 ## 2026-05-14 [building-skills] (session 1)
 
 - Changed the example `paths` glob in `references/skill-anatomy.md` from `**/*.swift` to `**/*.md` — the Swift example was misleading when the skill was used in non-Swift projects. A neutral example keeps the canonical version portable across host projects.

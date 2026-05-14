@@ -81,7 +81,7 @@ Same rule applies to: name choice, scope, overwrite vs new, anything else that's
 
 SKILL.md is a router, not a manual. The token budget is shared with the entire conversation.
 
-Three patterns, ranked by how often we use them in this repo:
+Three patterns — pick one, don't mix:
 
 1. **High-level guide + references** — SKILL.md has critical rules, a short workflow, and links to `references/<topic>.md` for deep dives. Default.
 2. **Domain-specific organization** — SKILL.md is a navigation page; each domain has its own reference file. Use when a skill spans clearly separable sub-topics.
@@ -90,14 +90,24 @@ Three patterns, ranked by how often we use them in this repo:
 Rules of the road:
 
 - SKILL.md body **≤ 500 lines**. If approaching that, split.
-- **One level deep** from SKILL.md to references — never `SKILL.md → advanced.md → details.md`. Claude may partial-read the inner file.
+- **One level deep only.** All reference links go directly from SKILL.md — never `SKILL.md → advanced.md → details.md`. Claude may only partially read a nested file and miss its content.
+
+  ```
+  # Bad
+  SKILL.md → advanced.md → details.md   ← Claude may miss details.md
+
+  # Good
+  SKILL.md → advanced.md
+  SKILL.md → details.md
+  ```
+
 - Reference files **> 100 lines** get a Table of Contents at the top.
-- Templates (fill-in scaffolds) go in `templates/`, narrative material in `references/`.
+- Templates (fill-in scaffolds) go in `templates/`, narrative material in `references/`, deterministic utility scripts in `scripts/`.
 - If a section is referenced by multiple skills, extract it into the relevant cross-cutting place (`docs/`, `agent-rules/`) — not into a skill's `references/`.
 
 Single-file skills can't use progressive disclosure (no supporting files). That's the main reason to pick the directory layout the moment a skill needs reference material or templates.
 
-See `references/skill-anatomy.md` for concrete layouts.
+See `references/skill-anatomy.md` for concrete layouts with examples.
 
 ## The Directive-Description Pattern
 

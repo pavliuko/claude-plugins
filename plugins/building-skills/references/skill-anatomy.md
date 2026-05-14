@@ -35,8 +35,10 @@ Or, typical:
 ├── references/
 │   ├── <topic-a>.md
 │   └── <topic-b>.md
-└── templates/
-    └── <thing>-template.md
+├── templates/
+│   └── <thing>-template.md
+└── scripts/
+    └── <utility>.py
 ```
 
 The directory name **must equal** the `name:` field (or `name:` may be omitted — it defaults to the directory name). Use when the skill needs any supporting files.
@@ -194,13 +196,76 @@ Three patterns. Pick one — don't mix. Available to directory-layout skills onl
 
 SKILL.md has the critical rules, a numbered workflow, and links into `references/` for deep dives. Best for most management workflows.
 
+```
+my-skill/
+├── SKILL.md          ← critical rules + workflow + links
+├── references/
+│   ├── topic-a.md    ← loaded only when that topic comes up
+│   └── topic-b.md
+└── templates/
+    └── thing-template.md
+```
+
+```markdown
+# My Skill
+
+## Quick start
+[core rules and short workflow here]
+
+## Advanced features
+- **Topic A**: See [references/topic-a.md](references/topic-a.md)
+- **Topic B**: See [references/topic-b.md](references/topic-b.md)
+```
+
 ### Pattern 2 — Domain-specific organization
 
-SKILL.md is a navigation page. Each domain has its own reference file, listed in a table or bullet list. Best when a skill spans clearly separable sub-topics.
+SKILL.md is a navigation page. Each domain has its own reference file, listed in a table or bullet list. Best when a skill spans clearly separable sub-topics. Claude only loads the domain file relevant to the current request.
+
+```
+bigquery-skill/
+├── SKILL.md              ← navigation page only
+└── reference/
+    ├── finance.md        ← revenue, billing metrics
+    ├── sales.md          ← opportunities, pipeline
+    ├── product.md        ← API usage, features
+    └── marketing.md      ← campaigns, attribution
+```
+
+```markdown
+# BigQuery Data Analysis
+
+## Available datasets
+
+| Domain | Topics | File |
+|---|---|---|
+| Finance | Revenue, ARR, billing | [reference/finance.md](reference/finance.md) |
+| Sales | Opportunities, pipeline | [reference/sales.md](reference/sales.md) |
+| Product | API usage, features | [reference/product.md](reference/product.md) |
+| Marketing | Campaigns, attribution | [reference/marketing.md](reference/marketing.md) |
+```
 
 ### Pattern 3 — Conditional details
 
 Inline the common 80% case in SKILL.md. Link to advanced/edge-case material in references. Best when most invocations don't need the deep flow.
+
+```
+my-skill/
+├── SKILL.md              ← basic usage inline; links to advanced paths
+└── references/
+    ├── advanced.md       ← edge cases and advanced flows
+    └── reference.md      ← API reference / lookup tables
+```
+
+```markdown
+# My Skill
+
+## Basic usage
+[inline the common 80% case here]
+
+## Advanced usage
+**Tracked changes**: See [references/advanced.md](references/advanced.md)
+**API reference**: See [references/reference.md](references/reference.md)
+```
 
 ## Naming Conventions
 
