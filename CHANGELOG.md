@@ -25,8 +25,8 @@ Format:
 
 ## 2026-05-14 [building-skills] (session 1)
 
-- Changed the example `paths` glob in `references/skill-anatomy.md` from `**/*.swift` to `**/*.md` — the skill was copied into another project (gorilla, a JS/Shopify service) where the Swift example was misleading. User: "make BulkSource-iOS use a language-neutral example".
-- Changed the Common Mistakes rule: scaffolded skills now leave the section empty at creation (header only, no rows). Updated step 6 of the Create workflow, the self-review checklist, and added a Common Mistakes row about the new rule itself. Also promoted Workflow: Edit's final step into its own `### 8. Self-review` heading. The template was intentionally left untouched. User requests (gorilla session, 2026-05-14): "update @.claude/skills/managing-skills/ to leave this section empty during skill creation"; "add ### 8. Self-review to ## Workflow: Edit"; "revert @.claude/skills/managing-skills/templates/skill-template.md changes".
+- Changed the example `paths` glob in `references/skill-anatomy.md` from `**/*.swift` to `**/*.md` — the Swift example was misleading when the skill was used in non-Swift projects. A neutral example keeps the canonical version portable across host projects.
+- Changed the Common Mistakes rule: scaffolded skills now leave the section empty at creation (header only, no rows). Updated step 6 of the Create workflow, the self-review checklist, and added a Common Mistakes row about the new rule itself. Also promoted Workflow: Edit's final step into its own `### 8. Self-review` heading. The template was intentionally left untouched. User requests: "update @.claude/skills/managing-skills/ to leave this section empty during skill creation"; "add ### 8. Self-review to ## Workflow: Edit"; "revert @.claude/skills/managing-skills/templates/skill-template.md changes".
 
 ## 2026-05-13 [building-skills]
 
@@ -38,7 +38,7 @@ Format:
 - Dropped the standalone `templates/command-template.md` and consolidated to one `templates/skill-template.md` — user feedback: "do we still need separate templates?" then "yes" to merging.
 - Dropped the "thin invoker" pattern — user request: "Thin invoker - i don't want to make such a commands anymore".
 - Renamed skill from `managing-claude-tools` to `managing-skills` — shorter, no vendor word. User request: "rename from managing-claude-tools to managing-skills".
-- Resolved contradiction between Critical Rule #3 and the Progressive Disclosure guidance — PR review comment https://github.com/BulkSource/BulkSource-iOS/pull/327#discussion_r3233852569.
+- Resolved contradiction between Critical Rule #3 and the Progressive Disclosure guidance — CR #3 forbade putting helper docs in `docs/` / `agent-rules/` "unless the user asks", while the disclosure section instructs extracting truly cross-cutting content there directly. Scoped CR #3 to skill-specific docs only.
 
 ## 2026-04-28 [skill-suggestion]
 
