@@ -47,5 +47,3 @@ description: <one-sentence factual lead>. ALWAYS invoke this skill when the user
 
 | Issue | Solution |
 |---|---|
-| <Antipattern 1> | <Fix>. |
-| <Antipattern 2> | <Fix>. |

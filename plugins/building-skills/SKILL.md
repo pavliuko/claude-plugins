@@ -3,7 +3,7 @@ name: building-skills
 description: Creates and edits project-level Claude Code skills under `.claude/skills/` and `.claude/commands/`. ALWAYS invoke this skill when the user asks to create, add, scaffold, refactor, or edit a skill, a slash command, a `SKILL.md`, or anything under `.claude/skills/` or `.claude/commands/`. Do not write `SKILL.md` or `.claude/commands/*.md` files directly — use this skill first.
 ---
 
-# Managing Claude Tools
+# Building Skills
 
 Authoring guide for project-level Claude Code **skills**. In Claude Code, custom slash commands and skills are the same primitive: a markdown file with YAML frontmatter that produces a `/name` entry. Two layout flavors exist for historical reasons:
 
@@ -244,7 +244,7 @@ Run the same checklist as Create — see [step 8 above](#8-self-review).
 | SKILL.md keeps growing | Extract sections into `references/<topic>.md`. Stay ≤ 500 lines. |
 | Reference file points to another reference file | Flatten. All refs link from SKILL.md directly. |
 | Long reference with no TOC | Add a Table of Contents to any reference > 100 lines. |
-| Skill named with noun phrase (`foo-management`) or command named in gerund form (`doing-thing`) | Rename: gerund + category prefix for skills (`managing-foo`), imperative verb-led for commands (`do-thing`). |
+| Skill named with noun phrase (`foo-management`) or command named in gerund form (`doing-thing`) | Rename: gerund + category prefix for skills (e.g. `managing-foo`, `developing-foo`), imperative verb-led for commands (`do-thing`). |
 | Name contains vendor word as branding (`claude-helper`, `anthropic-utils`) | Rename. The validator forbids `claude` / `anthropic` as branding. Object-of-management mentions are fine when the skill genuinely manages those things (e.g. `managing-<vendor>-config` where the vendor name is the thing being configured). |
 | Single-file skill in `.claude/commands/` that should be user-only is missing `disable-model-invocation: true` | Add the field — otherwise its description competes for auto-routing. |
 | Single-file skill grew past ~150 lines | Promote to directory layout — move the body into a new `.claude/skills/<name>/SKILL.md` and delete the single-file entry. |
@@ -255,7 +255,7 @@ Run the same checklist as Create — see [step 8 above](#8-self-review).
 
 ## Maintaining this skill
 
-Specific to `managing-skills` itself, not part of the general authoring guidance above.
+Specific to `building-skills` itself, not part of the general authoring guidance above.
 
 When you edit this skill, append an entry to `CHANGELOG.md` (gitignored, local memory of the skill's evolution). Each bullet:
 

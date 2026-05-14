@@ -55,7 +55,7 @@ Same fields apply to both layouts. Only `description` is universally recommended
 
 ```yaml
 ---
-name: managing-example                # optional, defaults to dir/filename. Lowercase letters/digits/hyphens, ≤ 64 chars.
+name: <skill-name>                    # optional, defaults to dir/filename. Lowercase letters/digits/hyphens, ≤ 64 chars.
 description: >                        # recommended. Drives auto-invocation. ≤ 1024 chars; cap of 1,536 chars in skill listing with `when_to_use`.
   One-sentence factual lead. ALWAYS invoke this skill when the user asks to
   X, Y, or Z. Do not <forbidden direct action> — use this skill first.
