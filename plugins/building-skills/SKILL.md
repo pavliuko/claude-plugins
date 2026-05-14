@@ -107,7 +107,7 @@ Rules of the road:
 
 Single-file skills can't use progressive disclosure (no supporting files). That's the main reason to pick the directory layout the moment a skill needs reference material or templates.
 
-See `references/skill-anatomy.md` for concrete layouts with examples.
+See `references/skill-anatomy.md` → "Progressive Disclosure Patterns" for concrete layouts, file-role rules, and script conventions.
 
 ## The Directive-Description Pattern
 

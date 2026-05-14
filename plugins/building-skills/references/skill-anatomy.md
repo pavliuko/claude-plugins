@@ -7,14 +7,11 @@ Concrete layout of a project-level skill. Covers both the directory layout (`.cl
 - [The Two Layouts](#the-two-layouts)
 - [Frontmatter Reference](#frontmatter-reference)
 - [Body Conventions](#body-conventions)
-- [The `references/` Directory](#the-references-directory)
-- [The `templates/` Directory](#the-templates-directory)
-- [The `scripts/` Directory (rare)](#the-scripts-directory-rare)
+- [Progressive Disclosure Patterns](#progressive-disclosure-patterns)
 - [Single-File Layout — Body Shape](#single-file-layout--body-shape)
 - [Invocation Mode (`disable-model-invocation`, `user-invocable`)](#invocation-mode-disable-model-invocation-user-invocable)
 - [`$ARGUMENTS` and `argument-hint`](#arguments-and-argument-hint)
 - [Calling Another Skill From a Skill](#calling-another-skill-from-a-skill)
-- [Progressive Disclosure Patterns](#progressive-disclosure-patterns)
 - [Naming Conventions](#naming-conventions)
 - [Token Budget Rules of Thumb](#token-budget-rules-of-thumb)
 
@@ -116,42 +113,115 @@ Style:
 - Backtick types, file paths, CLI flags, identifiers.
 - No emoji except the `🚨` and `⚠️` section markers this codebase uses.
 
-## The `references/` Directory
+## Progressive Disclosure Patterns
 
-Directory layout only. Use for long-form material that doesn't need to be in the routing layer.
+SKILL.md is a router. Supporting files are the mechanism — they exist only to be loaded or executed when SKILL.md points to them. Three file roles, two access modes:
 
-Extract into `references/<topic>.md` when:
+| Role | Directory | How Claude accesses it | Context cost |
+|---|---|---|---|
+| Reference material | `references/` (or flat siblings) | Read into context on demand | Tokens consumed when read |
+| Fill-in scaffolds | `templates/` | Read into context on demand | Tokens consumed when read |
+| Deterministic utilities | `scripts/` | Executed via bash; Claude sees printed output only | Script source never enters context |
 
-- The section is > ~80 lines.
-- It's only needed in a subset of invocations (advanced flow, lookup table, anti-pattern catalog).
-- It's referenced by multiple sections inside SKILL.md.
+`scripts/` is distinct: Claude runs the script and uses its output — the source itself never enters the context window.
 
-Rules:
+Three patterns. Pick one — don't mix. Available to directory-layout skills only.
 
-- **One level deep only.** A reference must not link to another reference for its real content. Cross-references between siblings are fine for navigation, but full content must be reachable directly from SKILL.md.
+### Pattern 1 — High-level guide with references (default)
+
+SKILL.md has the critical rules, a numbered workflow, and links into reference files for deep dives. Best for most workflows.
+
+```
+my-skill/
+├── SKILL.md              ← critical rules + workflow + links
+├── references/
+│   ├── topic-a.md        ← read into context only when topic A comes up
+│   └── topic-b.md
+└── templates/
+    └── thing-template.md ← read into context only when scaffolding
+```
+
+```markdown
+# My Skill
+
+## Quick start
+[core rules and short workflow here]
+
+## Advanced features
+- **Topic A**: See [references/topic-a.md](references/topic-a.md)
+- **Topic B**: See [references/topic-b.md](references/topic-b.md)
+```
+
+### Pattern 2 — Domain-specific organization
+
+SKILL.md is a navigation page. Each domain has its own reference file. Claude only loads the domain file relevant to the current request — other domains stay on disk, consuming zero tokens.
+
+```
+bigquery-skill/
+├── SKILL.md              ← navigation page only
+└── reference/
+    ├── finance.md        ← revenue, billing metrics
+    ├── sales.md          ← opportunities, pipeline
+    ├── product.md        ← API usage, features
+    └── marketing.md      ← campaigns, attribution
+```
+
+```markdown
+# BigQuery Data Analysis
+
+## Available datasets
+
+| Domain | Topics | File |
+|---|---|---|
+| Finance | Revenue, ARR, billing | [reference/finance.md](reference/finance.md) |
+| Sales | Opportunities, pipeline | [reference/sales.md](reference/sales.md) |
+| Product | API usage, features | [reference/product.md](reference/product.md) |
+| Marketing | Campaigns, attribution | [reference/marketing.md](reference/marketing.md) |
+```
+
+### Pattern 3 — Conditional details
+
+Inline the common 80% case in SKILL.md. Link to advanced/edge-case material. Best when most invocations don't need the deep flow.
+
+```
+my-skill/
+├── SKILL.md              ← basic usage inline; links to advanced paths
+└── references/
+    ├── advanced.md       ← edge cases and advanced flows
+    └── reference.md      ← API reference / lookup tables
+```
+
+```markdown
+# My Skill
+
+## Basic usage
+[inline the common 80% case here]
+
+## Advanced usage
+**Tracked changes**: See [references/advanced.md](references/advanced.md)
+**API reference**: See [references/reference.md](references/reference.md)
+```
+
+### Rules that apply to all patterns
+
+**Reference files (read on demand):**
+- Extract into a reference file when a section is > ~80 lines, only needed in a subset of invocations, or referenced from multiple places in SKILL.md.
+- **One level deep only.** References must not link to other references for their real content. Cross-links between siblings are fine for navigation, but every file must be reachable directly from SKILL.md.
 - **TOC required for files > 100 lines.** Claude may partial-read; the TOC ensures the full scope is visible.
-- **Self-contained.** A reader should not need to re-open SKILL.md to follow it.
+- **Self-contained.** A reader should not need to re-open SKILL.md to follow a reference file.
 
-## The `templates/` Directory
-
-Directory layout only. Use for **literal fill-in scaffolds** Claude should copy and edit, not paraphrase.
-
-Conventions:
-
-- Filename ends in `-template.md` (e.g. `<thing>-template.md`) — keeps markdown tooling working while making the role obvious.
+**Template files (read on demand):**
+- Use for **literal fill-in scaffolds** Claude should copy and edit, not paraphrase.
+- Filename ends in `-template.md` (e.g. `thing-template.md`) — keeps markdown tooling working while making the role obvious.
 - Use placeholders like `<feature-name>` or `{{description}}` — consistent within a file.
 - Add a one-line comment at the top explaining what the template produces.
 
-Example in this skill: `templates/skill-template.md`.
-
-## The `scripts/` Directory (rare)
-
-Directory layout only. Only add scripts when a step is fragile, deterministic, and repeated (validation, parsing, packing). Most workflows in this repo don't need them. If you add one:
-
+**Script files (executed, never read):**
+- Only add scripts when a step is fragile, deterministic, and repeated (validation, parsing, packing).
 - Forward slashes only in paths.
-- Self-document non-obvious constants.
-- Handle errors explicitly — don't punt to Claude.
-- Document invocation in SKILL.md with the exact command (use `${CLAUDE_SKILL_DIR}/scripts/foo.py` to make the path resolve regardless of cwd).
+- Self-document non-obvious constants; handle errors explicitly — don't punt to Claude.
+- Document invocation in SKILL.md with the exact command. Use `${CLAUDE_SKILL_DIR}/scripts/foo.py` so the path resolves regardless of cwd.
+- Make execution intent explicit in SKILL.md: "Run `scripts/foo.py`" (execute) vs "See `scripts/foo.py` for the algorithm" (read as reference).
 
 ## Single-File Layout — Body Shape
 
@@ -188,85 +258,6 @@ When the body says "Invoke the `<other-skill>` skill", Claude calls the `Skill` 
 1. `"Skill"` must be in `allowed-tools` (or `allowed-tools` must be omitted so the broad default applies).
 2. The target skill must exist and be discoverable.
 
-## Progressive Disclosure Patterns
-
-Three patterns. Pick one — don't mix. Available to directory-layout skills only.
-
-### Pattern 1 — High-level guide with references (default)
-
-SKILL.md has the critical rules, a numbered workflow, and links into `references/` for deep dives. Best for most management workflows.
-
-```
-my-skill/
-├── SKILL.md          ← critical rules + workflow + links
-├── references/
-│   ├── topic-a.md    ← loaded only when that topic comes up
-│   └── topic-b.md
-└── templates/
-    └── thing-template.md
-```
-
-```markdown
-# My Skill
-
-## Quick start
-[core rules and short workflow here]
-
-## Advanced features
-- **Topic A**: See [references/topic-a.md](references/topic-a.md)
-- **Topic B**: See [references/topic-b.md](references/topic-b.md)
-```
-
-### Pattern 2 — Domain-specific organization
-
-SKILL.md is a navigation page. Each domain has its own reference file, listed in a table or bullet list. Best when a skill spans clearly separable sub-topics. Claude only loads the domain file relevant to the current request.
-
-```
-bigquery-skill/
-├── SKILL.md              ← navigation page only
-└── reference/
-    ├── finance.md        ← revenue, billing metrics
-    ├── sales.md          ← opportunities, pipeline
-    ├── product.md        ← API usage, features
-    └── marketing.md      ← campaigns, attribution
-```
-
-```markdown
-# BigQuery Data Analysis
-
-## Available datasets
-
-| Domain | Topics | File |
-|---|---|---|
-| Finance | Revenue, ARR, billing | [reference/finance.md](reference/finance.md) |
-| Sales | Opportunities, pipeline | [reference/sales.md](reference/sales.md) |
-| Product | API usage, features | [reference/product.md](reference/product.md) |
-| Marketing | Campaigns, attribution | [reference/marketing.md](reference/marketing.md) |
-```
-
-### Pattern 3 — Conditional details
-
-Inline the common 80% case in SKILL.md. Link to advanced/edge-case material in references. Best when most invocations don't need the deep flow.
-
-```
-my-skill/
-├── SKILL.md              ← basic usage inline; links to advanced paths
-└── references/
-    ├── advanced.md       ← edge cases and advanced flows
-    └── reference.md      ← API reference / lookup tables
-```
-
-```markdown
-# My Skill
-
-## Basic usage
-[inline the common 80% case here]
-
-## Advanced usage
-**Tracked changes**: See [references/advanced.md](references/advanced.md)
-**API reference**: See [references/reference.md](references/reference.md)
-```
-
 ## Naming Conventions
 
 Shared rules for both primitives: lowercase letters, digits, hyphens. ≤ 64 chars. No `claude` / `anthropic` as branding — a vendor word is only allowed when it literally names the thing the skill acts on.
@@ -283,5 +274,6 @@ Shared rules for both primitives: lowercase letters, digits, hyphens. ≤ 64 cha
 - **Pre-loaded at startup:** `name` + `description` from every both-mode and Claude-only skill. User-only (`disable-model-invocation: true`) skills are **not** pre-loaded. This is the only context cost until a skill activates → keep descriptions tight.
 - **Loaded when skill activates:** the entire SKILL.md body. → stay ≤ 500 lines.
 - **Loaded on demand:** any file Claude explicitly reads (`references/`, `templates/`). → no startup cost, but each Read still consumes tokens, so split content along usage boundaries.
+- **Executed on demand:** scripts in `scripts/`. → Claude runs the script via bash and sees its printed output — the script's source code never enters the context window, regardless of how large it is.
 - **Auto-compaction:** invoked skills are kept across compactions within a 25,000-token budget (first 5,000 tokens of each, most recent first). Older skills can be dropped — re-invoke if they stop influencing behavior.
 - If a paragraph would teach Claude something it already knows, delete it.

@@ -23,6 +23,10 @@ Format:
 - Rewrote `## Naming Conventions` in `skill-anatomy.md` as a comparison table (Skills vs Commands) — the previous bullet-list structure was hard to read after multiple edits. User request: "update structure of ## Naming Conventions it is hard to read now".
 - Moved CHANGELOG instructions from `SKILL.md` to repo-root `CLAUDE.md` and consolidated per-plugin changelogs into a single repo-root `CHANGELOG.md` — per-plugin files were redundant once the rule became repo-wide. User request: "move instructions about CHANGELOG.md from skill to CLAUDE.md" and "let's combine changelog in a single file and move it to the root of the repo".
 
+## 2026-05-14 [building-skills] (session 3)
+
+- Restructured `references/skill-anatomy.md` to fold the three standalone directory sections (`The references/ Directory`, `The templates/ Directory`, `The scripts/ Directory`) into the Progressive Disclosure Patterns section — they only exist as the mechanism of progressive disclosure, not as independent features. Added a role-summary table (read on demand vs executed on demand) to make the `scripts/` distinction explicit. Moved Progressive Disclosure before Single-File Layout since single-file's key limitation is inability to use it. Added "Executed on demand" bullet to Token Budget Rules of Thumb. User question: "can they exist out of progressive disclosure approach?" followed by "yes" to restructure.
+
 ## 2026-05-14 [building-skills] (session 2)
 
 - Aligned progressive disclosure content with the official Anthropic docs (`platform.claude.com/docs/…/best-practices#progressive-disclosure-patterns`). Five changes:
