@@ -1,0 +1,53 @@
+# Changelog
+
+History of changes across all plugins. Append an entry every time a plugin is edited.
+
+**Each bullet must say what changed AND why.** If the change came from a user request, a doc, a PR, or an external source, link or quote it. The "what" is recoverable from git history; the "why" is what makes the changelog useful when revisiting a decision later.
+
+Format:
+
+```
+## YYYY-MM-DD [<plugin>]
+
+- <What changed> — <why>. <Reference: URL / "user request: ..." / doc section / PR / quoted message>.
+```
+
+---
+
+## 2026-05-14 [building-skills]
+
+- Extracted skill into this repo (`pavliuko/claude-plugins`) as a standalone plugin — previously lived only inside host projects. Added `plugins/building-skills/.claude-plugin/plugin.json` and a `marketplace.json` entry so it's installable via `/plugin install building-skills@pavliuko`. User request: "yes" (to adding the missing plugin manifest and marketplace entry).
+- Renamed plugin from `managing-skills` to `building-skills` — `managing-` implies lifecycle ops (delete, track, organize) rather than the core action of writing a skill. User request: "rename to building-skills".
+- Fixed stale H1 title (`# Managing Claude Tools` → `# Building Skills`), stale "Maintaining this skill" self-reference (`managing-skills` → `building-skills`), stale frontmatter example (`name: managing-example` → `name: <skill-name>`), and placeholder antipattern rows in `templates/skill-template.md` — all left over from the rename. User request: "inspect skill again" / review session.
+- Removed the hardcoded `managing-` / `developing-` prefix list from Naming Conventions — it implied those were the only valid gerunds, which contradicted the skill's own name (`building-skills`). Replaced with the pattern `<gerund>-<object>` and a table comparing skills vs commands. User feedback: "we abuse managing and developing words" and "category-prefix + gerund for skills — this is wrong".
+- Rewrote `## Naming Conventions` in `skill-anatomy.md` as a comparison table (Skills vs Commands) — the previous bullet-list structure was hard to read after multiple edits. User request: "update structure of ## Naming Conventions it is hard to read now".
+- Moved CHANGELOG instructions from `SKILL.md` to repo-root `CLAUDE.md` and consolidated per-plugin changelogs into a single repo-root `CHANGELOG.md` — per-plugin files were redundant once the rule became repo-wide. User request: "move instructions about CHANGELOG.md from skill to CLAUDE.md" and "let's combine changelog in a single file and move it to the root of the repo".
+
+## 2026-05-14 [building-skills] (session 1)
+
+- Changed the example `paths` glob in `references/skill-anatomy.md` from `**/*.swift` to `**/*.md` — the skill was copied into another project (gorilla, a JS/Shopify service) where the Swift example was misleading. User: "make BulkSource-iOS use a language-neutral example".
+- Changed the Common Mistakes rule: scaffolded skills now leave the section empty at creation (header only, no rows). Updated step 6 of the Create workflow, the self-review checklist, and added a Common Mistakes row about the new rule itself. Also promoted Workflow: Edit's final step into its own `### 8. Self-review` heading. The template was intentionally left untouched. User requests (gorilla session, 2026-05-14): "update @.claude/skills/managing-skills/ to leave this section empty during skill creation"; "add ### 8. Self-review to ## Workflow: Edit"; "revert @.claude/skills/managing-skills/templates/skill-template.md changes".
+
+## 2026-05-13 [building-skills]
+
+- Initial creation as `managing-claude-tools` skill (SKILL.md + references + templates) — to provide a single place that owns skill/command authoring so the model stops writing `SKILL.md` files freehand. User request: "inspect skills we have across the project, learn best practices and create skill to build and edit skills and commands as special case of the skill; use Progressive disclosure approach".
+- Renamed templates from `*.template` to `*-template.md` — keeps markdown tooling working. User: "yes" (to a recommendation to rename).
+- Merged `slash-command-anatomy.md` into `skill-anatomy.md` — same primitive, only layout differs. User: "do we really need to separate skill from command by concept… what are other differences?"
+- Reframed "Skill vs Slash Command" as "ask the user" — both axes (layout, invocation mode) belong to the user, not the agent. User: "no need to make decision. Agent needs to get this information from user, if agent not sure it should stop and ask".
+- Reworded the skill description's negative constraint to name file paths instead of "skill descriptions" — user feedback: "'skill descriptions' here sounds vague".
+- Dropped the standalone `templates/command-template.md` and consolidated to one `templates/skill-template.md` — user feedback: "do we still need separate templates?" then "yes" to merging.
+- Dropped the "thin invoker" pattern — user request: "Thin invoker - i don't want to make such a commands anymore".
+- Renamed skill from `managing-claude-tools` to `managing-skills` — shorter, no vendor word. User request: "rename from managing-claude-tools to managing-skills".
+- Resolved contradiction between Critical Rule #3 and the Progressive Disclosure guidance — PR review comment https://github.com/BulkSource/BulkSource-iOS/pull/327#discussion_r3233852569.
+
+## 2026-04-28 [skill-suggestion]
+
+- Initial plugin created — `UserPromptSubmit` hook that scores user prompts against a project-defined skill catalog (`rules.json`) and injects a ranked suggestion banner into Claude's context. Commit: `24713dd`.
+- Rewrote README from scratch — original was auto-generated and unclear. Commit: `130bbf9`.
+- Expanded README with detailed explanations of project skills vs plugin skills — users were unclear on the distinction. Commit: `3178603`.
+- Expanded README install steps with a ready-to-paste `rules.json` starter — users had no starting point after installing the hook. Commit: `4ebe736`.
+
+## 2026-04-28 [swift-concurrency-reviewer]
+
+- Initial migration into `pavliuko/claude-plugins` marketplace — moved from the standalone repo `https://github.com/pavliuko/swift-concurrency-reviewer` to consolidate all plugins in one place. Commit: `410a13a`.
+- Moved `plugins/swift-concurrency-reviewer/AGENTS.md` to repo-root `CLAUDE.md` — plugin-level guidance belongs at the repo root so it applies across all plugins. Commit: `6141dbb`.

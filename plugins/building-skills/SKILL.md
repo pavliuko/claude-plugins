@@ -24,7 +24,6 @@ Files in `.claude/commands/` keep working but the docs recommend skills for new 
 - [Workflow: Create](#workflow-create)
 - [Workflow: Edit](#workflow-edit)
 - [⚠️ Common Mistakes](#️-common-mistakes)
-- [Maintaining this skill](#maintaining-this-skill)
 
 ## 🚨 CRITICAL RULES (NEVER VIOLATE)
 
@@ -250,17 +249,3 @@ Run the same checklist as Create — see [step 8 above](#8-self-review).
 | Single-file skill grew past ~150 lines | Promote to directory layout — move the body into a new `.claude/skills/<name>/SKILL.md` and delete the single-file entry. |
 | Skill scaffolded without `templates/`, then copy-pasted boilerplate every invocation | Put the scaffold in `templates/<thing>-template.md` and have SKILL.md tell Claude to read it. |
 | Common Mistakes table filled with invented antipatterns at scaffold time | Leave the section empty at creation. Add rows only when a real failure happens — a misfire, a user correction, a reviewer catch. Speculative entries dilute the real ones. |
-
----
-
-## Maintaining this skill
-
-Specific to `building-skills` itself, not part of the general authoring guidance above.
-
-When you edit this skill, append an entry to `CHANGELOG.md` (gitignored, local memory of the skill's evolution). Each bullet:
-
-- **What** changed.
-- **Why** — the reason or trigger.
-- **Reference** if one exists: URL, doc section, PR, or a quoted user request.
-
-The "what" is in git; the "why" is the changelog's only value.

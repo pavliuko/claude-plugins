@@ -13,4 +13,14 @@ Swift Concurrency Reviewer is a Claude Code plugin that reviews Swift code for c
 
 ## Skills Name Convention
 
-Use **gerund form** (verb + -ing) for skill names. Lowercase letters, numbers, and hyphens only.
+Pattern: `<gerund>-<object>`. Lowercase letters, numbers, and hyphens only. Use the gerund that best describes the action.
+
+## Plugin CHANGELOG
+
+All plugin history lives in the repo-root `CHANGELOG.md`. When editing a plugin, append an entry tagged with the plugin name:
+
+- **What** changed.
+- **Why** — the reason or trigger.
+- **Reference** if one exists: URL, doc section, PR, or a quoted user request.
+
+The "what" is in git; the "why" is the changelog's only value.
