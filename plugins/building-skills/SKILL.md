@@ -210,7 +210,7 @@ If a section grows past ~80 lines or stops being routinely needed, extract it. C
 
 ```
 Self-review:
-- [ ] Name matches directory / filename; gerund for skills, imperative or alias for commands
+- [ ] Name matches directory / filename; gerund + object for skills, imperative or alias for commands
 - [ ] Description follows the directive-description pattern (or skill has disable-model-invocation: true)
 - [ ] SKILL.md ≤ 500 lines
 - [ ] All reference links are one level deep
@@ -244,8 +244,8 @@ Run the same checklist as Create — see [step 8 above](#8-self-review).
 | SKILL.md keeps growing | Extract sections into `references/<topic>.md`. Stay ≤ 500 lines. |
 | Reference file points to another reference file | Flatten. All refs link from SKILL.md directly. |
 | Long reference with no TOC | Add a Table of Contents to any reference > 100 lines. |
-| Skill named with noun phrase (`foo-management`) or command named in gerund form (`doing-thing`) | Rename: gerund + category prefix for skills (e.g. `managing-foo`, `developing-foo`), imperative verb-led for commands (`do-thing`). |
-| Name contains vendor word as branding (`claude-helper`, `anthropic-utils`) | Rename. The validator forbids `claude` / `anthropic` as branding. Object-of-management mentions are fine when the skill genuinely manages those things (e.g. `managing-<vendor>-config` where the vendor name is the thing being configured). |
+| Skill named with noun phrase (`foo-management`) or command named in gerund form (`doing-thing`) | Rename: gerund + object for skills (e.g. `building-skills`, `managing-prs`), imperative verb-led for commands (`do-thing`). |
+| Name contains vendor word as branding (`claude-helper`, `anthropic-utils`) | Rename. The validator forbids `claude` / `anthropic` as branding. Object-of-action mentions are fine when the skill genuinely acts on those things (e.g. `managing-<vendor>-config` where the vendor name is the thing being configured). |
 | Single-file skill in `.claude/commands/` that should be user-only is missing `disable-model-invocation: true` | Add the field — otherwise its description competes for auto-routing. |
 | Single-file skill grew past ~150 lines | Promote to directory layout — move the body into a new `.claude/skills/<name>/SKILL.md` and delete the single-file entry. |
 | Skill scaffolded without `templates/`, then copy-pasted boilerplate every invocation | Put the scaffold in `templates/<thing>-template.md` and have SKILL.md tell Claude to read it. |

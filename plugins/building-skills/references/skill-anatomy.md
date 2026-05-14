@@ -204,22 +204,14 @@ Inline the common 80% case in SKILL.md. Link to advanced/edge-case material in r
 
 ## Naming Conventions
 
-Shared rules: lowercase letters, digits, hyphens. ≤ 64 chars. No `claude` / `anthropic` as branding inside the name. The carve-out is narrow: a vendor word may appear only when it is literally the object the skill manages or configures, not when it functions as a label.
+Shared rules for both primitives: lowercase letters, digits, hyphens. ≤ 64 chars. No `claude` / `anthropic` as branding — a vendor word is only allowed when it literally names the thing the skill acts on.
 
-The naming form differs by primitive because the two are read in different contexts: a skill name is referenced in third person by the description router ("the skill that manages X" → `managing-x`), while a command name is what the user types ("`/do-thing` this" → `do-thing`).
+| Primitive | Pattern | Examples | Anti-examples |
+|---|---|---|---|
+| Skill | `<gerund>-<object>` | `building-skills`, `managing-prs` | `skills-builder`, `prs-management` |
+| Command | `<verb>-<object>` or short alias | `do-thing`, `gh`, `pr` | `doing-thing`, `skill-management` |
 
-### Skills — `managing-` / `developing-` + gerund
-
-- **Gerund form** (verb + -ing). `managing-foo`, not `foo-manager` or `foo-management`.
-- **Stable category prefixes:**
-  - `managing-` — project management work: commits, PRs, issues, releases, tracking, docs/rules.
-  - `developing-` — writing or understanding code: explanation, generation, debugging, refactoring.
-
-### Commands — imperative or short alias
-
-- **Imperative verb-led** for action commands that name what the user is doing: `<verb>-<object>` (e.g. `do-thing`, `process-input`). Verb in plain imperative form, not gerund (`/do-thing`, not `/doing-thing`).
-- **Short alias** for high-frequency shortcuts: 2–4 chars when possible (e.g. `gh`, `pr`). Optimize for typing speed; clarity comes from the description.
-- **No category prefix.** Commands aren't grouped the way skills are.
+**Skills** use a gerund (verb + -ing) because the name describes what the skill does, not what the user types. **Commands** use an imperative verb or a short alias optimised for typing speed.
 
 ## Token Budget Rules of Thumb
 
