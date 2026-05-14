@@ -16,14 +16,14 @@ Once added, install any plugin below with `/plugin install <name>@pavliuko`.
 | --- | --- |
 | [`swift-concurrency-reviewer`](plugins/swift-concurrency-reviewer/README.md) | Reviews Swift PRs for concurrency issues. Has `learn` and `concise` output modes. |
 | [`skill-suggestion`](plugins/skill-suggestion/README.md) | `UserPromptSubmit` hook that scores your prompt against project-defined skill triggers and injects a ranked suggestion banner into Claude's context. |
-| [`managing-skills`](plugins/managing-skills/SKILL.md) | Authoring guide for creating and editing project-level Claude Code skills and slash commands. |
+| [`building-skills`](plugins/building-skills/SKILL.md) | Authoring guide for creating and editing project-level Claude Code skills and slash commands. |
 
 ### Install
 
 ```
 /plugin install swift-concurrency-reviewer@pavliuko
 /plugin install skill-suggestion@pavliuko
-/plugin install managing-skills@pavliuko
+/plugin install building-skills@pavliuko
 ```
 
 See each plugin's README for prerequisites, configuration, and usage.
@@ -37,7 +37,7 @@ See each plugin's README for prerequisites, configuration, and usage.
 ├── plugins/
 │   ├── swift-concurrency-reviewer/
 │   ├── skill-suggestion/
-│   └── managing-skills/
+│   └── building-skills/
 └── CLAUDE.md                # repo-wide guidance (naming, git rules)
 ```
 

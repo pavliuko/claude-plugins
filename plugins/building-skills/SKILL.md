@@ -1,5 +1,5 @@
 ---
-name: managing-skills
+name: building-skills
 description: Creates and edits project-level Claude Code skills under `.claude/skills/` and `.claude/commands/`. ALWAYS invoke this skill when the user asks to create, add, scaffold, refactor, or edit a skill, a slash command, a `SKILL.md`, or anything under `.claude/skills/` or `.claude/commands/`. Do not write `SKILL.md` or `.claude/commands/*.md` files directly — use this skill first.
 ---
 

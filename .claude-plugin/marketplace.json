@@ -51,8 +51,8 @@
       "category": "productivity"
     },
     {
-      "name": "managing-skills",
-      "source": "./plugins/managing-skills",
+      "name": "building-skills",
+      "source": "./plugins/building-skills",
       "description": "Authoring guide for creating and editing project-level Claude Code skills and slash commands.",
       "version": "1.0.0",
       "author": {
@@ -64,7 +64,7 @@
       "keywords": [
         "skills",
         "slash-commands",
-        "authoring",
+        "building",
         "productivity"
       ],
       "category": "productivity"
