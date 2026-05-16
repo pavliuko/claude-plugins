@@ -7,6 +7,7 @@ Concrete layout of a project-level skill. Covers both the directory layout (`.cl
 - [The Two Layouts](#the-two-layouts)
 - [Frontmatter Reference](#frontmatter-reference)
 - [Body Conventions](#body-conventions)
+- [Feedback Loops](#feedback-loops)
 - [Progressive Disclosure Patterns](#progressive-disclosure-patterns)
 - [Single-File Layout — Body Shape](#single-file-layout--body-shape)
 - [Invocation Mode (`disable-model-invocation`, `user-invocable`)](#invocation-mode-disable-model-invocation-user-invocable)
@@ -112,6 +113,56 @@ Style:
 - Code fences with language hints (`swift`, `bash`, `yaml`).
 - Backtick types, file paths, CLI flags, identifiers.
 - No emoji except the `🚨` and `⚠️` section markers this codebase uses.
+
+## Feedback Loops
+
+For quality-critical or fragile workflows, build a **validator → fix → repeat** loop into the body. Claude runs a check, fixes errors it surfaces, and re-checks until clean — instead of barrelling through and producing flawed output. The "validator" can be a script, an external tool, or a reference doc Claude reads and compares against.
+
+When to add one:
+
+- Output has objective correctness criteria (compiles, parses, passes lint, matches a schema, follows a style guide).
+- A late failure is expensive to undo (committed code, sent message, packed artifact).
+- The workflow has a natural "did this work?" checkpoint Claude would otherwise skip.
+
+When to skip:
+
+- Open-ended creative tasks with no machine-checkable criterion.
+- One-shot operations where the next step is itself the verification.
+
+Two shapes:
+
+**Validator script (deterministic check):**
+
+```markdown
+1. Make your edits to `word/document.xml`
+2. **Validate immediately**: `python ooxml/scripts/validate.py unpacked_dir/`
+3. If validation fails:
+   - Read the error message
+   - Fix the XML
+   - Re-run validation
+4. **Only proceed when validation passes**
+5. Rebuild: `python ooxml/scripts/pack.py unpacked_dir/ output.docx`
+```
+
+**Reference-doc check (no script):**
+
+```markdown
+1. Draft your content following `references/style-guide.md`
+2. Review against the checklist:
+   - Terminology matches the glossary
+   - Examples follow the standard format
+   - All required sections present
+3. If issues found, revise and re-check
+4. Only finalize once the checklist passes
+```
+
+For batch or destructive operations, extend the loop with an intermediate **plan file** Claude validates before executing: analyze → write `changes.json` → validate plan → execute → verify. The plan is cheap to iterate; the execution is not.
+
+Three things make the loop actually work:
+
+- **Make the validator verbose.** "Field 'signature_date' not found. Available: customer_name, order_total, signature_date_signed" is fixable; "validation failed" is not.
+- **Phrase the loop as a hard gate**, not a suggestion. "Only proceed when validation passes" beats "consider validating".
+- **Name the script, exact command, and exit condition** in the body — same low-freedom style as the rest of the workflow.
 
 ## Progressive Disclosure Patterns
 

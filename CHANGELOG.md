@@ -14,6 +14,10 @@ Format:
 
 ---
 
+## 2026-05-16 [building-skills]
+
+- Added "Feedback Loops" section to `references/skill-anatomy.md` covering the validator → fix → repeat pattern (plus the plan-validate-execute extension for batch/destructive ops). Discovery via the references blurb in `SKILL.md` only — kept out of the Workflow: Create steps to avoid promoting a subset-applicable technique to mandatory-every-skill status. Brings the skill in line with the official "Implement feedback loops" best practice. Reference: `https://platform.claude.com/docs/en/agents-and-tools/agent-skills/best-practices#implement-feedback-loops`. User request: "i want to add this technique to the skill" + chose option #3 (reference-only pointer) when asked where to place it.
+
 ## 2026-05-14 [building-skills]
 
 - Extracted skill into this repo (`pavliuko/claude-plugins`) as a standalone plugin — previously lived only inside host projects. Added `plugins/building-skills/.claude-plugin/plugin.json` and a `marketplace.json` entry so it's installable via `/plugin install building-skills@pavliuko`. User request: "yes" (to adding the missing plugin manifest and marketplace entry).

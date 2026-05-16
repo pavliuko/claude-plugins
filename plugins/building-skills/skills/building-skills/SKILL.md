@@ -36,7 +36,7 @@ Files in `.claude/commands/` keep working but the docs recommend skills for new 
 
 Load on demand — don't paste their content into SKILL.md.
 
-- `references/skill-anatomy.md` — full skill layout, frontmatter fields (every one), file roles (`references/`, `templates/`, `scripts/`), single-file layout differences, progressive-disclosure patterns, when to extract files.
+- `references/skill-anatomy.md` — full skill layout, frontmatter fields (every one), file roles (`references/`, `templates/`, `scripts/`), single-file layout differences, progressive-disclosure patterns, feedback-loop pattern for quality-critical workflows, when to extract files.
 - `references/description-pattern.md` — the directive-description pattern (slot anatomy + scoping procedure).
 - `templates/skill-template.md` — fill-in scaffold for a new skill (works for both layouts).
 
