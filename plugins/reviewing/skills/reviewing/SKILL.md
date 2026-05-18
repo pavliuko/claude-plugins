@@ -18,7 +18,7 @@ This skill replaces ad-hoc "please review this" responses with a predictable sha
 
 - [🚨 CRITICAL RULES (NEVER VIOLATE)](#-critical-rules-never-violate)
 - [References](#references)
-- [Ask the User](#ask-the-user)
+- [Pinning the Scope](#pinning-the-scope)
 - [Pluggable Instructions: `.claude/reviewing-instructions/`](#pluggable-instructions-claudereviewing-instructions)
 - [Confidence Rubric](#confidence-rubric)
 - [Workflow](#workflow)
@@ -31,7 +31,7 @@ This skill replaces ad-hoc "please review this" responses with a predictable sha
 2. **Never approve a partial scope.** Incremental reviews (e.g. new commits only, a single file out of a larger change) lack the full picture. End with "Not approving — partial scope" instead of a thumbs-up.
 3. **Always load `.claude/reviewing-instructions/`** from the repo root if it exists. "Repo root" means the root of the user's current working repository — never this plugin's own repo. Every file in that directory is part of the review rubric. Treat them as project-authored rules with the same weight as this skill's defaults. If they conflict with this skill's defaults, project rules win.
 4. **Filter by confidence.** Rate every finding 0–100 (see [Confidence Rubric](#confidence-rubric)) and drop anything below `< 65` by default (same threshold for code and documents). Reporting low-confidence noise trains the user to ignore the report.
-5. **Ask, don't infer.** If the scope, the review type, or the confidence threshold is ambiguous, stop and ask. Do not guess that "review this" means "review HEAD" or "review the whole repo".
+5. **Ask, don't guess, about scope.** If the scope or confidence threshold is ambiguous, stop and ask. Do not guess that "review this" means "review HEAD" or "review the whole repo".
 
 ## References
 
@@ -39,18 +39,15 @@ Load on demand — don't paste their content here.
 
 - `references/review-types.md` — focus lists and "do not comment on" lists for each review type (general code — security is included here, not split out — documents, custom). Read after the user picks the type.
 
-## Ask the User
+## Pinning the Scope
 
-Three things must be explicit before you start. If any is missing, stop and ask. Combine them into one message:
+Scope must be explicit before the review starts. If the user named a scope — a PR number, a diff range, paths, a directory — proceed. Project rules under `.claude/reviewing-instructions/` are auto-loaded if the folder exists; the review type follows from the scope's contents (see [Choosing a Review Type](#choosing-a-review-type)).
 
-> Before I start the review:
-> 1. **Scope** — what exactly should I review? (a PR number, a branch / diff range like `main..HEAD`, the working tree, specific files, a whole directory, or something else)
-> 2. **Type** — general code review (security is part of it), document review, or something custom?
-> 3. **Extra rules** — should I load `.claude/reviewing-instructions/`? (default: yes if the folder exists)
+If scope is missing or ambiguous, ask one question:
 
-The user may answer all three in their initial prompt — re-read it carefully before asking. Only ask about the parts that are genuinely ambiguous.
+> What should I review? (a PR number, a branch / diff range like `main..HEAD`, the working tree, specific files, a whole directory, or something else)
 
-A path or list of paths passed as an argument (e.g. `/reviewing src/api/`) counts as an explicit answer to question 1 — map it via the [Scope vocabulary](#scope-vocabulary) table and only ask about Type and Extra rules if those remain ambiguous.
+A path or list of paths passed as an argument (e.g. `/reviewing src/api/`) is an explicit scope — map it via the [Scope vocabulary](#scope-vocabulary) table and start.
 
 ### Scope vocabulary
 
@@ -111,19 +108,20 @@ Do not include the score in the user-facing report unless they ask — it's an i
 
 ```
 Review:
-- [ ] 1. Confirm scope, type, and instruction-loading (Ask the User)
+- [ ] 1. Pin the scope
 - [ ] 2. Materialize the diff or file set for the scope
 - [ ] 3. Load .claude/reviewing-instructions/ if present
-- [ ] 4. Read each in-scope file or diff hunk
-- [ ] 5. Generate findings; rate each 0–100
-- [ ] 6. Filter by threshold; group by file
-- [ ] 7. Emit the report (Output Format)
-- [ ] 8. If scope is partial, append the no-approval note
+- [ ] 4. Infer the review type from the scope's contents
+- [ ] 5. Read each in-scope file or diff hunk
+- [ ] 6. Generate findings; rate each 0–100
+- [ ] 7. Filter by threshold; group by file
+- [ ] 8. Emit the report (Output Format)
+- [ ] 9. If scope is partial, append the no-approval note
 ```
 
-### 1. Confirm scope, type, instructions
+### 1. Pin the scope
 
-See [Ask the User](#ask-the-user). Don't proceed until all three are pinned.
+See [Pinning the Scope](#pinning-the-scope). Don't proceed until the scope is unambiguous.
 
 ### 2. Materialize the scope
 
@@ -142,13 +140,17 @@ For diff-based scopes, save the diff to a temp file if it's large; reference hun
 
 Per [Pluggable Instructions](#pluggable-instructions-claudereviewing-instructions). If the folder exists and is non-empty, run the discovery procedure (recursive listing, `## Applies to` glob filtering) and read every remaining file before generating any findings.
 
-### 4. Read each in-scope file
+### 4. Infer the review type
+
+Pick the type from the contents of the materialized scope, per [Choosing a Review Type](#choosing-a-review-type). Mixed scopes (code + prose) run both types; the report emits one section per type.
+
+### 5. Read each in-scope file
 
 For **code** reviews, the diff is usually enough context. Read full files only when the diff doesn't show enough surrounding code to judge the change.
 
 For **document** reviews, always read the full file even if only a few lines changed — ambiguity and contradictions live in the whole document.
 
-### 5. Generate findings
+### 6. Generate findings
 
 For each potential issue:
 
@@ -156,15 +158,15 @@ For each potential issue:
 - Apply project rules from `.claude/reviewing-instructions/` — cite the file and rule when one matches.
 - Rate 0–100 using the [Confidence Rubric](#confidence-rubric).
 
-### 6. Filter and group
+### 7. Filter and group
 
 Drop everything below the threshold. Group remaining findings by file, ordered by severity within each file (91+ first).
 
-### 7. Emit the report
+### 8. Emit the report
 
 Use [Output Format](#output-format) verbatim. One section, with the scope name in the header.
 
-### 8. Partial-scope note
+### 9. Partial-scope note
 
 If the review covered only part of a logical change (e.g. new commits on a PR you didn't see from the start, one file out of a multi-file refactor), append:
 
@@ -227,7 +229,7 @@ The report opens with an ASCII banner so the reader can spot the start of the re
 
 | Issue | Solution |
 |---|---|
-| Agent started reviewing without confirming scope | Stop. Ask the three questions in [Ask the User](#ask-the-user) before reading any files. |
+| Agent started reviewing without an explicit scope | Stop and ask the single scope question in [Pinning the Scope](#pinning-the-scope) before reading any files. |
 | Report expanded beyond the scope the user asked for | Drop the out-of-scope findings. Stick to exactly what they named. |
 | Reviewer approved a partial scope ("looks good!" on incremental commits) | Append the partial-scope note instead. A subset can't be approved. |
 | `.claude/reviewing-instructions/` exists but was ignored | Re-do the review with those rules loaded. Cite each rule by filename in findings. |

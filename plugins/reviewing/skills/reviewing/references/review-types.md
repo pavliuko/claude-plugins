@@ -7,7 +7,7 @@ Focus lists and exclusion lists for each review type. Pick one based on what the
 - [General Code Review](#general-code-review)
 - [Document Review](#document-review)
 - [Custom Review](#custom-review)
-- [Choosing a Type When the User Didn't](#choosing-a-type-when-the-user-didnt)
+- [Choosing a Review Type](#choosing-a-review-type)
 
 ## General Code Review
 
@@ -67,20 +67,16 @@ When the user defines their own focus ("review for accessibility", "review for A
 3. Apply project rules from `.claude/reviewing-instructions/` that match the focus (by filename or `## Applies to` glob).
 4. Keep the confidence rubric, threshold, and output format the same as the other types.
 
-## Choosing a Type When the User Didn't
+## Choosing a Review Type
 
-If the user didn't specify a type, infer from the scope's content **and confirm** before starting:
+The type follows from the contents of the materialized scope:
 
-| Content of scope | Likely type |
+| Content of scope | Type |
 |---|---|
 | Source files (`.ts`, `.py`, `.swift`, `.go`, `.rs`, `.java`, `.kt`, `.rb`, `.cpp`, etc.) | General Code |
 | Auth / crypto / payment / user-data code | General Code with security priority raised (see [General Code Review](#general-code-review)) |
 | `docs/**`, `README.md`, other `.md` / prose files | Document Review |
-| Mixed — code + documents | Run both; emit two sections, one per type |
+| Config / data files (`*.json`, `*.yaml`, `*.toml`, `Dockerfile`, etc.) | Document Review |
+| Mixed — code + prose | Run both; emit one section per type |
 
-Confirm in one sentence: "This looks like a code change — running general code review unless you want something else."
-
-**When to wait for acknowledgement:**
-
-- **Proceed without waiting** when the scope is unambiguously code (only source files) or unambiguously prose (only `.md` / `docs/**`).
-- **Wait** when the scope is mixed (code + documents), when the user's wording was vague ("look at this"), or when the inferred type might surprise them (e.g. a `.md` file inside a source directory).
+State the inferred type in the report's banner — no acknowledgement step. The single exception is a **custom** review (the user named their own focus like "review for accessibility"): restate the focus back in one line and have them confirm before starting (see [Custom Review](#custom-review)).
