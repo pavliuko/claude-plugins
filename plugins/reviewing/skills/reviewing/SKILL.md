@@ -169,32 +169,51 @@ If the review covered only part of a logical change (e.g. new commits on a PR yo
 
 Always emit exactly this structure. `{scope}` is a short label of what was reviewed ("PR #123", "branch `feat/auth`", "file `src/api/users.ts`", etc.). `{type}` is the review type label ("Code", "Document", or the custom label).
 
+The report opens with an ASCII banner so the reader can spot the start of the review at a glance. Use the banner block below verbatim — do not redesign it per review.
+
 ```
-## 🔍 {type} Review — {scope}
+╔══════════════════════════════════════════════════════════════╗
+║                  🔍  {type} REVIEW                            ║
+║                  {scope}                                      ║
+╚══════════════════════════════════════════════════════════════╝
 
 **Reviewed:** <one-line description of exactly what was looked at>
 **Project rules applied:** <comma-separated list of .claude/reviewing-instructions/* files used, or "none">
 
-### Findings
+──────────────────────────────────────────────────────────────
+ 📋  FINDINGS
+──────────────────────────────────────────────────────────────
 
-#### `path/to/file.ext`
-- **L42** — <one-line problem statement>. <one-line fix or explanation>.
-- **L88–95** — <problem>. <fix>.
+#### 📄 `path/to/file.ext`
+- 🔴 **L42** — <one-line problem statement>. <one-line fix or explanation>.
+- 🟡 **L88–95** — <problem>. <fix>.
 
-#### `path/to/other.ext`
-- **L7** — <problem>. <fix>.
+#### 📄 `path/to/other.ext`
+- 🟢 **L7** — <problem>. <fix>.
 
-### Summary
+──────────────────────────────────────────────────────────────
+ 📝  SUMMARY
+──────────────────────────────────────────────────────────────
 
 <2–4 sentences: overall impression, the most important issue, and what to do next.>
 ```
 
+**Severity glyphs** (prepend to each finding bullet, derived from the internal confidence score — the score itself stays hidden):
+
+| Glyph | Score band | Meaning |
+|---|---|---|
+| 🔴 | 91–100 | Critical — blocks merge / must fix |
+| 🟠 | 76–90 | Important — should fix before merge |
+| 🟡 | 65–75 | Worth addressing but non-blocking |
+| 🟢 | n/a | Positive note (only when the user asked for them) |
+
 **Rules for the body:**
 
+- Pad the banner's top and bottom border lines to the same width; truncate `{scope}` with `…` if it would overflow.
 - One bullet per finding. No multi-paragraph essays.
 - Always include the file path and line range. No "around line 50" hand-waving.
-- If there are zero findings above threshold, replace `### Findings` with `### Findings\n\nNone above threshold.` and still write the Summary.
-- Never include the confidence score unless the user asked for it.
+- If there are zero findings above threshold, replace the FINDINGS block body with a single line — `✅  None above threshold.` — and still write the SUMMARY block.
+- Never include the confidence score unless the user asked for it. The severity glyph is the only visible signal.
 - Never include AI / model attribution.
 
 **If the scope is a PR and the user has authorized posting:** use `gh pr review` or `gh pr comment` with the same body. Default is to print the report in chat — only push to GitHub when explicitly told to.
