@@ -22,7 +22,7 @@ The default for "review this PR / branch / file" when the content is source code
 - **API misuse** — calling a function with wrong arguments, ignoring return values that signal failure, deprecated APIs.
 - **Error handling** — swallowed errors, broad catches that hide bugs, error messages with no actionable information, retry loops with no backoff.
 - **Performance footguns** — N+1 queries, accidentally quadratic loops, blocking calls on the hot path. Only flag when the impact is real, not theoretical.
-- **Security** — injection (SQL / command / template / log), broken auth & IDOR, secrets in code/logs/URLs, weak or home-rolled crypto, missing input validation, unsafe deserialization, path traversal, session/token issues, XSS / CSRF / SSRF, TOCTOU around auth, PII leakage to telemetry. For auth / crypto / payment / user-data scopes (or when the user asks for extra security attention), raise priority and drop the threshold to 51 for security findings.
+- **Security** — injection (SQL / command / template / log), broken auth & IDOR, secrets in code/logs/URLs, weak or home-rolled crypto, missing input validation, unsafe deserialization, path traversal, session/token issues, XSS / CSRF / SSRF, TOCTOU around auth, PII leakage to telemetry.
 - **Explicit project-rule violations** — anything cited by `.claude/reviewing-instructions/*.md`.
 
 **Do NOT comment on:**
@@ -78,4 +78,9 @@ If the user didn't specify a type, infer from the scope's content **and confirm*
 | `docs/**`, `README.md`, other `.md` / prose files | Document Review |
 | Mixed — code + documents | Run both; emit two sections, one per type |
 
-Confirm in one sentence: "This looks like a code change — running general code review unless you want something else." Wait for acknowledgement only if the user might disagree; otherwise proceed.
+Confirm in one sentence: "This looks like a code change — running general code review unless you want something else."
+
+**When to wait for acknowledgement:**
+
+- **Proceed without waiting** when the scope is unambiguously code (only source files) or unambiguously prose (only `.md` / `docs/**`).
+- **Wait** when the scope is mixed (code + documents), when the user's wording was vague ("look at this"), or when the inferred type might surprise them (e.g. a `.md` file inside a source directory).

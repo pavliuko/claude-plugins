@@ -23,13 +23,13 @@ This skill replaces ad-hoc "please review this" responses with a predictable sha
 - [Confidence Rubric](#confidence-rubric)
 - [Workflow](#workflow)
 - [Output Format](#output-format)
-- [⚠️ Common Mistakes](#️-common-mistakes)
+- [⚠️ Common Mistakes](#-common-mistakes)
 
 ## 🚨 CRITICAL RULES (NEVER VIOLATE)
 
 1. **Scope is whatever the user said — nothing more.** If they said "review this PR", review the PR diff. If they said "review the auth module", review only files under that module. Do not expand into unrelated files because they look interesting.
 2. **Never approve a partial scope.** Incremental reviews (e.g. new commits only, a single file out of a larger change) lack the full picture. End with "Not approving — partial scope" instead of a thumbs-up.
-3. **Always load `.claude/reviewing-instructions/`** from the repo root if it exists. Every file in that directory is part of the review rubric. Treat them as project-authored rules with the same weight as this skill's defaults. If they conflict with this skill's defaults, project rules win.
+3. **Always load `.claude/reviewing-instructions/`** from the repo root if it exists. "Repo root" means the root of the user's current working repository — never this plugin's own repo. Every file in that directory is part of the review rubric. Treat them as project-authored rules with the same weight as this skill's defaults. If they conflict with this skill's defaults, project rules win.
 4. **Filter by confidence.** Rate every finding 0–100 (see [Confidence Rubric](#confidence-rubric)) and drop anything below `< 65` by default (same threshold for code and documents). Reporting low-confidence noise trains the user to ignore the report.
 5. **Ask, don't infer.** If the scope, the review type, or the confidence threshold is ambiguous, stop and ask. Do not guess that "review this" means "review HEAD" or "review the whole repo".
 
@@ -49,6 +49,8 @@ Three things must be explicit before you start. If any is missing, stop and ask.
 > 3. **Extra rules** — should I load `.claude/reviewing-instructions/`? (default: yes if the folder exists)
 
 The user may answer all three in their initial prompt — re-read it carefully before asking. Only ask about the parts that are genuinely ambiguous.
+
+A path or list of paths passed as an argument (e.g. `/reviewing src/api/`) counts as an explicit answer to question 1 — map it via the [Scope vocabulary](#scope-vocabulary) table and only ask about Type and Extra rules if those remain ambiguous.
 
 ### Scope vocabulary
 
@@ -70,9 +72,12 @@ Project-specific review rules live under `.claude/reviewing-instructions/` at th
 ```
 1. Check if .claude/reviewing-instructions/ exists at the repo root.
 2. If it doesn't: proceed with just this skill's defaults.
-3. If it does: list every *.md file in it (non-recursive is fine; recursive if the project uses subfolders).
-4. Read each file fully before starting the review.
-5. Treat each file's rules as part of the rubric — call them out by name in findings ("violates .claude/reviewing-instructions/api-layer.md rule 3").
+3. If it does: list every *.md file in it recursively.
+4. For each file, check for an `## Applies to` section containing a glob:
+   - If present and no path in the current scope matches the glob, skip the file.
+   - If absent, the file applies to every scope.
+5. Read each remaining file fully before starting the review.
+6. Treat each file's rules as part of the rubric — call them out by name in findings ("violates .claude/reviewing-instructions/api-layer.md rule 3").
 ```
 
 **Convention for project authors** (mention this if the folder is empty or the user asks how to add rules):
@@ -135,7 +140,7 @@ For diff-based scopes, save the diff to a temp file if it's large; reference hun
 
 ### 3. Load project instructions
 
-Per [Pluggable Instructions](#pluggable-instructions-claudereviewing-instructions). If the folder exists and is non-empty, read every relevant file before generating any findings.
+Per [Pluggable Instructions](#pluggable-instructions-claudereviewing-instructions). If the folder exists and is non-empty, run the discovery procedure (recursive listing, `## Applies to` glob filtering) and read every remaining file before generating any findings.
 
 ### 4. Read each in-scope file
 
@@ -169,7 +174,7 @@ If the review covered only part of a logical change (e.g. new commits on a PR yo
 
 Always emit exactly this structure. `{scope}` is a short label of what was reviewed ("PR #123", "branch `feat/auth`", "file `src/api/users.ts`", etc.). `{type}` is the review type label ("Code", "Document", or the custom label).
 
-The report opens with an ASCII banner so the reader can spot the start of the review at a glance. Use the banner block below verbatim — do not redesign it per review.
+The report opens with an ASCII banner so the reader can spot the start of the review at a glance. Use the banner block below verbatim — do not redesign it per review. The fenced block below is for display only; emit the banner **unfenced** so the box characters render.
 
 ```
 ╔══════════════════════════════════════════════════════════════╗
@@ -209,7 +214,7 @@ The report opens with an ASCII banner so the reader can spot the start of the re
 
 **Rules for the body:**
 
-- Pad the banner's top and bottom border lines to the same width; truncate `{scope}` with `…` if it would overflow.
+- The banner is **64 columns wide** (top and bottom borders are `╔` + 62× `═` + `╗`). Each content line (`║ … ║`) must also be exactly 64 columns: after substituting `{type}` and `{scope}`, pad with trailing spaces so the right-hand `║` lands in column 64. Treat each emoji (🔍 etc.) as occupying 2 columns when computing padding. Truncate `{scope}` with `…` if it would overflow the inner width.
 - One bullet per finding. No multi-paragraph essays.
 - Always include the file path and line range. No "around line 50" hand-waving.
 - If there are zero findings above threshold, replace the FINDINGS block body with a single line — `✅  None above threshold.` — and still write the SUMMARY block.
