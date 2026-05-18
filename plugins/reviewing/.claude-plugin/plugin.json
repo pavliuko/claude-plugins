@@ -1,0 +1,19 @@
+{
+  "name": "reviewing",
+  "version": "1.0.0",
+  "description": "Scope-aware code and document review. Asks the user what to review, applies confidence-rated findings, and plugs in project-specific rules from .claude/reviewing-instructions/.",
+  "author": {
+    "name": "pavliuko",
+    "email": "pavliuk.aleksandr@gmail.com"
+  },
+  "repository": "https://github.com/pavliuko/claude-plugins",
+  "license": "MIT",
+  "keywords": [
+    "code-review",
+    "review",
+    "pr-review",
+    "quality",
+    "productivity"
+  ],
+  "category": "development"
+}
