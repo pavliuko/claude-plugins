@@ -88,6 +88,26 @@
         "productivity"
       ],
       "category": "development"
+    },
+    {
+      "name": "explaining",
+      "source": "./plugins/explaining",
+      "description": "Explains anything — code, concepts, systems, processes — with an ASCII diagram, a step-by-step walkthrough, and a gotcha to watch out for.",
+      "version": "1.0.0",
+      "author": {
+        "name": "pavliuko",
+        "email": "pavliuk.aleksandr@gmail.com"
+      },
+      "repository": "https://github.com/pavliuko/claude-plugins",
+      "license": "MIT",
+      "keywords": [
+        "explain",
+        "diagrams",
+        "walkthrough",
+        "teaching",
+        "productivity"
+      ],
+      "category": "productivity"
     }
   ]
 }

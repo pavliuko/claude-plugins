@@ -14,6 +14,10 @@ Format:
 
 ---
 
+## 2026-07-16 [explaining]
+
+- Initial plugin creation. Single skill (`explaining`) made from a user-supplied `developing-code-explain` skill: the source was code-only ("explain code, walk through a function or file, trace a flow"); this version keeps its exact minimal shape — three mandatory ingredients (ASCII diagram, step-by-step walkthrough, highlighted gotcha), conversational tone — with only the code-only wording generalized to any subject. A first draft added extra structure (an H1 intro, a "Calibrating" section); reverted after user feedback: "you overcomplicated original skill, i just wanted it to be not only about code". Named `explaining` following the bare-gerund precedent set by `reviewing`. Registered in `marketplace.json`, repo `README.md`, and symlinked into `.claude/skills/` like `reviewing`. User request: "create new plugin, skill; make it out of this skill: [developing-code-explain] … but it should be about explaining anything".
+
 ## 2026-05-18 [reviewing]
 
 - Removed the review-type question from the scope-clarifying step. Type is now inferred from the materialized scope's contents (with `Document Review` covering config/data files like `*.json`, `*.yaml`, `Dockerfile`) and stated in the report banner without an acknowledgement step; `Custom` is the only type that still requires a one-line confirmation. Renamed the "Ask the User" section to "Pinning the Scope", collapsed the three-question prompt into a single scope question, added an explicit "Infer the review type" workflow step after project instructions are loaded, and renamed `references/review-types.md` § "Choosing a Type When the User Didn't" to "Choosing a Review Type". User request: "as a user i don't want to be asked about type of review; improve skill" + "no need to act like we want to avoid asking, just design document like this is not needed".
