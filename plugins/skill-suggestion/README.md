@@ -10,17 +10,24 @@ score = keywords*KW + intentPatterns*IW + pathPatterns*PW
 
 A skill is suggested when `score >= confidenceThreshold` and no `excludePatterns` substring matches the prompt. Weights, thresholds and confidence cut-offs come from `rules.json` → `.config.scoring`.
 
-## Project layout
+## Rules scopes
 
-The hook reads and writes everything under one directory in your project:
+The hook reads `rules.json` from two scopes and merges them:
 
 ```
-$CLAUDE_PROJECT_DIR/.claude/skill-suggestion/
-├── rules.json              # you create this — skills + scoring config
-└── skill-suggestion.log    # per-prompt scoring trace, created on first run
+~/.claude/skill-suggestion/rules.json                    # user scope — applies in every project
+$CLAUDE_PROJECT_DIR/.claude/skill-suggestion/rules.json  # project scope — this repo only
 ```
 
-If `rules.json` is missing the hook silently no-ops, so installing the plugin is harmless until you opt in.
+Merge semantics:
+
+- **Skills** — the union of both files. On a skill-name collision the project entry replaces the user entry wholesale.
+- **Config** — deep-merged key by key, project values winning. A project can override just `confidenceThreshold` and inherit everything else from the user scope.
+- Either file may be absent; a malformed file is treated as empty so one broken scope never disables the other.
+
+The `skill-suggestion.log` scoring trace is written next to each scope's `rules.json`: the user log when user rules exist, the project log when project rules exist — both logs get the same lines when both scopes exist. A scope without rules gets no log, so a user-scope-only setup never creates `.claude/` directories inside projects.
+
+If neither `rules.json` exists the hook silently no-ops, so installing the plugin is harmless until you opt in.
 
 ## rules.json shape
 
@@ -74,18 +81,25 @@ If `rules.json` is missing the hook silently no-ops, so installing the plugin is
 
 A skill in `rules.json` is just a name plus triggers — the hook itself doesn't load skill content. Where Claude actually finds the skill depends on whether the entry has a `plugin` field.
 
-### Project skill (no `plugin` field)
+### File-based skill (no `plugin` field)
 
-The skill lives in your project at `.claude/skills/<name>/SKILL.md`. The banner renders the path so Claude can read it directly:
+The skill lives at `.claude/skills/<name>/SKILL.md` — in the project when the entry comes from project rules, under `~` when it comes from user-scope rules. The banner renders the matching path so Claude can read it directly:
 
 ```
 📚 managing-commits
    Description: Commits changes following project conventions.
    Confidence: 🟡 MEDIUM (score: 5)
-   Path: .claude/skills/managing-commits/SKILL.md
+   Path: .claude/skills/managing-commits/SKILL.md      ← project-scope entry
 ```
 
-You manage it like any other file in the repo. No marketplace, no install step — just create `.claude/skills/managing-commits/SKILL.md` and reference the name in `rules.json`.
+```
+📚 writing-docs
+   Description: Keeps READMEs and docs in house style.
+   Confidence: 🟡 MEDIUM (score: 4)
+   Path: ~/.claude/skills/writing-docs/SKILL.md        ← user-scope entry
+```
+
+No marketplace, no install step — just create the `SKILL.md` and reference the name in the `rules.json` of the same scope.
 
 ### Plugin skill (`plugin: "<name>@<marketplace>"`)
 
@@ -117,9 +131,9 @@ Mix both freely in one `rules.json`: project skills for conventions specific to 
 /plugin install skill-suggestion@pavliuko
 ```
 
-**2. Create `rules.json` in your project**
+**2. Create a `rules.json`**
 
-The hook does **not** create this file for you — without it, the hook silently no-ops on every prompt. Drop a starter file at `.claude/skill-suggestion/rules.json`:
+The hook does **not** create this file for you — without one, it silently no-ops on every prompt. Put reusable, everywhere rules in `~/.claude/skill-suggestion/rules.json` and repo-specific rules in the project's `.claude/skill-suggestion/rules.json` — either alone works, and both merge (see [Rules scopes](#rules-scopes)). Starter file for the project scope:
 
 ```sh
 mkdir -p .claude/skill-suggestion
@@ -156,5 +170,5 @@ Add more skills as needed — see the [`rules.json` shape](#rulesjson-shape) and
 ## Notes
 
 - The hook always exits 0; it never blocks the prompt.
-- Logs are append-only — rotate or delete `skill-suggestion.log` yourself if it grows.
+- Logs are append-only — rotate or delete each scope's `skill-suggestion.log` yourself if it grows.
 - Path matching uses bash globs with `globstar`/`extglob`/`nocaseglob`, so `**/*.swift` works.

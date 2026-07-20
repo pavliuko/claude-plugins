@@ -13,26 +13,80 @@
 # matches. Weights and thresholds come from rules.json (.config.scoring).
 #
 # Inputs:  stdin  — UserPromptSubmit JSON ({ "prompt": "..." , ... })
-#          file   — $CLAUDE_PROJECT_DIR/.claude/skill-suggestion/rules.json
+#          files  — $HOME/.claude/skill-suggestion/rules.json          (user scope)
+#                   $CLAUDE_PROJECT_DIR/.claude/skill-suggestion/rules.json (project scope)
 # Outputs: stdout — JSON envelope with hookSpecificOutput.additionalContext
 #                   (no output when no skills match)
-#          file   — $CLAUDE_PROJECT_DIR/.claude/skill-suggestion/skill-suggestion.log
+#          files  — skill-suggestion.log in each scope that has a rules.json
+#                   (both logs are appended when both scopes exist)
 # Exit:    always 0 — never block the prompt.
 
 set -euo pipefail
 
 PROJECT_DIR="${CLAUDE_PROJECT_DIR:-$PWD}"
-DATA_DIR="$PROJECT_DIR/.claude/skill-suggestion"
-SKILL_RULES="$DATA_DIR/rules.json"
-LOG_FILE="$DATA_DIR/skill-suggestion.log"
 
-# Without rules.json there is nothing to score against; bail silently so the
-# hook never disrupts the user turn on projects that haven't opted in.
-if [ ! -f "$SKILL_RULES" ]; then
+# Rules come from two scopes, merged: user-scope rules apply in every project,
+# project rules add to them and win on skill-name collisions. Config keys are
+# deep-merged with project values taking precedence.
+USER_DATA_DIR="$HOME/.claude/skill-suggestion"
+PROJECT_DATA_DIR="$PROJECT_DIR/.claude/skill-suggestion"
+USER_RULES="$USER_DATA_DIR/rules.json"
+PROJECT_RULES="$PROJECT_DATA_DIR/rules.json"
+
+# Without any rules file there is nothing to score against; bail silently so
+# the hook never disrupts the user turn when nobody has opted in.
+if [ ! -f "$USER_RULES" ] && [ ! -f "$PROJECT_RULES" ]; then
     exit 0
 fi
 
-mkdir -p "$DATA_DIR"
+# Log next to each scope's rules file: the user log when user rules exist,
+# the project log when project rules exist — both when both do. A scope
+# without rules gets no log, so a user-scope-only setup never creates
+# .claude/ directories inside arbitrary projects.
+USER_LOG=""
+PROJECT_LOG=""
+if [ -f "$USER_RULES" ]; then
+    USER_LOG="$USER_DATA_DIR/skill-suggestion.log"
+    mkdir -p "$USER_DATA_DIR"
+fi
+if [ -f "$PROJECT_RULES" ]; then
+    PROJECT_LOG="$PROJECT_DATA_DIR/skill-suggestion.log"
+    mkdir -p "$PROJECT_DATA_DIR"
+fi
+
+# Appends a line to every active scope log.
+log_line() {
+    [ -n "$USER_LOG" ] && echo "$1" >> "$USER_LOG"
+    [ -n "$PROJECT_LOG" ] && echo "$1" >> "$PROJECT_LOG"
+    return 0
+}
+
+# Emits a scope's rules JSON, treating a missing or malformed file as an
+# empty ruleset so one broken scope never takes down the other.
+read_rules() {
+    if [ -f "$1" ] && jq -e . "$1" >/dev/null 2>&1; then
+        cat "$1"
+    else
+        echo '{}'
+    fi
+}
+
+# Merge the two scopes into a single rules document that the rest of the
+# script reads. Each skill entry is tagged with its origin scope so the
+# banner can render the right SKILL.md path (~/.claude vs .claude).
+SKILL_RULES=$(mktemp "${TMPDIR:-/tmp}/skill-suggestion-rules.XXXXXX")
+trap 'rm -f "$SKILL_RULES"' EXIT
+
+jq -n \
+    --argjson user "$(read_rules "$USER_RULES")" \
+    --argjson project "$(read_rules "$PROJECT_RULES")" \
+    '
+    def tagged(rules; o): (rules.skills // {}) | with_entries(.value.origin = o);
+    {
+        skills: (tagged($user; "user") + tagged($project; "project")),
+        config: (($user.config // {}) * ($project.config // {}))
+    }
+    ' > "$SKILL_RULES"
 
 # Build the set of plugins enabled across all settings scopes Claude Code
 # reads (user, project, project-local). Skills whose rules.json entry has a
@@ -75,7 +129,7 @@ if [ -z "$USER_PROMPT" ]; then
     exit 0
 fi
 
-echo "[$(date '+%Y-%m-%d %H:%M:%S')] Suggesting skills for prompt: ${USER_PROMPT:0:80}" >> "$LOG_FILE"
+log_line "[$(date '+%Y-%m-%d %H:%M:%S')] Suggesting skills for prompt: ${USER_PROMPT:0:80}"
 
 # Lowercase copy used by every case-insensitive substring/regex match below.
 PROMPT_LOWER=$(echo "$USER_PROMPT" | tr '[:upper:]' '[:lower:]')
@@ -207,7 +261,7 @@ while IFS= read -r skill; do
 
     plugin=$(jq -r --arg name "$skill" '.skills[$name].plugin // empty' "$SKILL_RULES")
     if [ -n "$plugin" ] && ! is_plugin_enabled "$plugin"; then
-        echo "  ⊘ Skipped (plugin not in enabledPlugins): $skill ($plugin)" >> "$LOG_FILE"
+        log_line "  ⊘ Skipped (plugin not in enabledPlugins): $skill ($plugin)"
         continue
     fi
 
@@ -219,16 +273,16 @@ while IFS= read -r skill; do
 
     if [ $SCORE -gt 0 ]; then
         if matches_exclusion "$skill"; then
-            echo "  ✗ Excluded: $skill (score=$SCORE, matched exclusion pattern)" >> "$LOG_FILE"
+            log_line "  ✗ Excluded: $skill (score=$SCORE, matched exclusion pattern)"
             continue
         fi
 
         if [ $SCORE -ge $CONFIDENCE_THRESHOLD ]; then
             MATCHED_SKILLS+=("$skill")
             MATCHED_SCORES+=("$SCORE")
-            echo "  ✓ Matched: $skill (score=$SCORE, keywords=$KEYWORD_MATCH_COUNT, intents=$INTENT_MATCH_COUNT, paths=$PATH_MATCH_COUNT)" >> "$LOG_FILE"
+            log_line "  ✓ Matched: $skill (score=$SCORE, keywords=$KEYWORD_MATCH_COUNT, intents=$INTENT_MATCH_COUNT, paths=$PATH_MATCH_COUNT)"
         else
-            echo "  ○ Below threshold: $skill (score=$SCORE < $CONFIDENCE_THRESHOLD)" >> "$LOG_FILE"
+            log_line "  ○ Below threshold: $skill (score=$SCORE < $CONFIDENCE_THRESHOLD)"
         fi
     fi
 done < <(jq -r '.skills | keys[]' "$SKILL_RULES")
@@ -256,7 +310,7 @@ if [ ${#MATCHED_SKILLS[@]} -gt 1 ]; then
 fi
 
 if [ ${#MATCHED_SKILLS[@]} -eq 0 ]; then
-    echo "  No skills matched" >> "$LOG_FILE"
+    log_line "  No skills matched"
     exit 0
 fi
 
@@ -318,7 +372,14 @@ CONTEXT=$({
             printf '   Plugin: %s\n' "$plugin"
             printf '   Invoke: %s\n' "$skill"
         else
-            printf '   Path: .claude/skills/%s/SKILL.md\n' "$skill"
+            # Origin scope decides where the SKILL.md lives: user-scope skills
+            # sit under ~/.claude/skills, project skills under .claude/skills.
+            origin=$(jq -r --arg name "$skill" '.skills[$name].origin // "project"' "$SKILL_RULES")
+            if [ "$origin" = "user" ]; then
+                printf '   Path: ~/.claude/skills/%s/SKILL.md\n' "$skill"
+            else
+                printf '   Path: .claude/skills/%s/SKILL.md\n' "$skill"
+            fi
         fi
         echo ""
     done
@@ -358,6 +419,6 @@ jq -n \
     }'
 
 # Final picks for this run; pairs with the per-skill scoring trace above.
-echo "  Suggested skills: ${ALL_MATCHED_SKILLS[*]}" >> "$LOG_FILE"
+log_line "  Suggested skills: ${ALL_MATCHED_SKILLS[*]}"
 
 exit 0
