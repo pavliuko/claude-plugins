@@ -14,6 +14,10 @@ Format:
 
 ---
 
+## 2026-07-25 [cmp]
+
+- Initial plugin creation. Wraps a single slash command, `cmp` ("commit and push"), copied verbatim from a host project's `.claude/commands/cmp.md` so the alias travels with the marketplace instead of being re-created per repo. `disable-model-invocation: true` is kept from the source — the command is a manual shortcut and must never be auto-triggered by the model. Named `cmp` rather than a gerund like `committing`: the plugin exists only to carry the alias, and the repo's `<gerund>-<object>` rule applies to skills, of which this plugin has none. Registered in `marketplace.json`, repo `README.md` (table row, install command, layout tree). User request: "copy cmp command from this repo to /Users/pasashque/Code/pavliuko/claude-plugins" + "but not commiting it should be cmp".
+
 ## 2026-07-20 [skill-suggestion]
 
 - Hook now merges two `rules.json` scopes — user (`~/.claude/skill-suggestion/rules.json`) and project (`$CLAUDE_PROJECT_DIR/.claude/skill-suggestion/rules.json`) — instead of reading only the project file. Skills are unioned with project entries winning on name collisions; config is deep-merged with project values taking precedence; a missing or malformed file in one scope is treated as empty so it never disables the other. Each merged skill entry is tagged with its origin scope so the banner renders the correct SKILL.md path (`~/.claude/skills/...` for user-scope entries vs `.claude/skills/...` for project ones). Reason: the plugin is meant to be installed globally, but with project-only config a global install gave no suggestions until every repo opted in. User request: "we should make plugin respect both rules files global and local in the project".
