@@ -14,6 +14,10 @@ Format:
 
 ---
 
+## 2026-08-06 [english]
+
+- Removed the plugin: deleted `plugins/english/`, its `marketplace.json` entry, and its `README.md` references (table row, install command, layout tree). User request: "remove english plugin from plugin repo". The 2026-07-28 entry below is kept as-is — it records why the hook was built the way it was, which is the part worth having if the idea ever comes back.
+
 ## 2026-08-04 [statusline]
 
 - Initial addition, as a standalone `statusline/` directory rather than a plugin under `plugins/`. A plugin's `settings.json` accepts only the `agent` and `subagentStatusLine` keys — `statusLine` is not among them (https://code.claude.com/docs/en/plugins-reference, "File locations reference") — so a plugin cannot deliver this config no matter how it's packaged. Pointing user settings at the bundled script directly was rejected as well: `${CLAUDE_PLUGIN_ROOT}` is documented as ephemeral ("changes when the plugin updates … treat it as ephemeral"), so the path would break on every plugin update. That left two shapes — a plugin with an install command copying the script to a stable `~/.claude/` path, or a plain versioned script with manual install steps. User chose the latter: nothing to enable, nothing to keep in sync.

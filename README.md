@@ -20,7 +20,6 @@ Once added, install any plugin below with `/plugin install <name>@pavliuko`.
 | [`reviewing`](plugins/reviewing/skills/reviewing/SKILL.md) | Scope-aware code and document review. Asks for scope, applies confidence-rated findings, and loads project rules from `.claude/reviewing-instructions/`. |
 | [`explaining`](plugins/explaining/skills/explaining/SKILL.md) | Explains anything — code, concepts, systems, processes — with an ASCII diagram, a step-by-step walkthrough, and a gotcha. |
 | [`cmp`](plugins/cmp/commands/cmp.md) | Shorthand slash command for "commit and push" — commits pending changes and pushes to the remote. |
-| [`english`](plugins/english/README.md) | `UserPromptSubmit` hook that injects an English-coaching brief and appends a short ❌/✅ correction when your prompt has a real mistake. |
 
 ### Install
 
@@ -31,7 +30,6 @@ Once added, install any plugin below with `/plugin install <name>@pavliuko`.
 /plugin install reviewing@pavliuko
 /plugin install explaining@pavliuko
 /plugin install cmp@pavliuko
-/plugin install english@pavliuko
 ```
 
 See each plugin's README for prerequisites, configuration, and usage.
@@ -56,8 +54,7 @@ Not everything Claude Code can be configured with fits the plugin format.
 │   ├── building-skills/
 │   ├── reviewing/
 │   ├── explaining/
-│   ├── cmp/
-│   └── english/
+│   └── cmp/
 ├── statusline/              # standalone status line script (not a plugin)
 └── CLAUDE.md                # repo-wide guidance (naming, git rules)
 ```
