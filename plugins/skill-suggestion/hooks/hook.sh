@@ -12,11 +12,16 @@
 # A skill is suggested when score >= confidenceThreshold AND no excludePattern
 # matches. Weights and thresholds come from rules.json (.config.scoring).
 #
+# A skill entry with `"always": true` opts out of all of the above: it is
+# suggested on every prompt, needs no promptTriggers, ignores excludePatterns,
+# and does not consume a maxSkillsPerPrompt slot.
+#
 # Inputs:  stdin  — UserPromptSubmit JSON ({ "prompt": "..." , ... })
 #          files  — $HOME/.claude/skill-suggestion/rules.json          (user scope)
 #                   $CLAUDE_PROJECT_DIR/.claude/skill-suggestion/rules.json (project scope)
 # Outputs: stdout — JSON envelope with hookSpecificOutput.additionalContext
-#                   (no output when no skills match)
+#                   (when no skills match, a systemMessage-only envelope tells
+#                   the user; the model context is untouched)
 #          files  — skill-suggestion.log in each scope that has a rules.json
 #                   (both logs are appended when both scopes exist)
 # Exit:    always 0 — never block the prompt.
@@ -137,6 +142,10 @@ PROMPT_LOWER=$(echo "$USER_PROMPT" | tr '[:upper:]' '[:lower:]')
 # Parallel arrays: MATCHED_SKILLS[i] has score MATCHED_SCORES[i].
 MATCHED_SKILLS=()
 MATCHED_SCORES=()
+
+# Skills flagged `"always": true`. They have no score, so they keep their own
+# list: rendered ahead of the scored matches and outside the display cap.
+PINNED_SKILLS=()
 
 # Scoring weights and thresholds (with sensible fallbacks if rules.json omits
 # them). HIGH/MEDIUM only affect the displayed confidence label.
@@ -265,6 +274,14 @@ while IFS= read -r skill; do
         continue
     fi
 
+    # Pinned skills short-circuit scoring entirely: no keyword/intent/path
+    # counting, no exclusion check. "Always" means always.
+    if [ "$(jq -r --arg name "$skill" '.skills[$name].always // false' "$SKILL_RULES")" = "true" ]; then
+        PINNED_SKILLS+=("$skill")
+        log_line "  📌 Pinned (always): $skill"
+        continue
+    fi
+
     count_keyword_matches "$skill"
     count_intent_matches "$skill"
     count_path_matches "$skill"
@@ -309,30 +326,92 @@ if [ ${#MATCHED_SKILLS[@]} -gt 1 ]; then
     MATCHED_SCORES=("${SORTED_SCORES[@]}")
 fi
 
-if [ ${#MATCHED_SKILLS[@]} -eq 0 ]; then
+if [ ${#MATCHED_SKILLS[@]} -eq 0 ] && [ ${#PINNED_SKILLS[@]} -eq 0 ]; then
     log_line "  No skills matched"
+    # Tell the user in the transcript that the hook ran but found nothing.
+    # No additionalContext — the model's context stays untouched.
+    jq -n '{systemMessage: "💡 Skill suggestion: no matching skills for this prompt"}'
     exit 0
 fi
 
-# Cap the number of skills shown in detail. Anything beyond MAX_SKILLS is
+# Cap the number of scored skills shown in detail. Anything beyond MAX_SKILLS is
 # rendered as a one-line "also matched" footer so the banner stays compact.
+# Pinned skills are exempt from the cap — they are always shown in full.
 MAX_SKILLS=$(jq -r '.config.maxSkillsPerPrompt // 3' "$SKILL_RULES")
 
-ALL_MATCHED_SKILLS=("${MATCHED_SKILLS[@]}")
-ALL_MATCHED_SCORES=("${MATCHED_SCORES[@]}")
-
-DISPLAY_SKILLS=("${MATCHED_SKILLS[@]:0:$MAX_SKILLS}")
-DISPLAY_SCORES=("${MATCHED_SCORES[@]:0:$MAX_SKILLS}")
-
+ALL_MATCHED_SKILLS=()
 CUTOFF_SKILLS=()
 CUTOFF_SCORES=()
-if [ ${#ALL_MATCHED_SKILLS[@]} -gt $MAX_SKILLS ]; then
-    CUTOFF_SKILLS=("${ALL_MATCHED_SKILLS[@]:$MAX_SKILLS}")
-    CUTOFF_SCORES=("${ALL_MATCHED_SCORES[@]:$MAX_SKILLS}")
+
+# Guarded: bash 3.2 under `set -u` rejects "${empty[@]}" as unbound, and a
+# pinned-only run reaches here with no scored matches at all.
+if [ ${#MATCHED_SKILLS[@]} -gt 0 ]; then
+    ALL_MATCHED_SKILLS=("${MATCHED_SKILLS[@]}")
+    ALL_MATCHED_SCORES=("${MATCHED_SCORES[@]}")
+
+    if [ ${#ALL_MATCHED_SKILLS[@]} -gt "$MAX_SKILLS" ]; then
+        CUTOFF_SKILLS=("${ALL_MATCHED_SKILLS[@]:$MAX_SKILLS}")
+        CUTOFF_SCORES=("${ALL_MATCHED_SCORES[@]:$MAX_SKILLS}")
+    fi
+
+    MATCHED_SKILLS=("${ALL_MATCHED_SKILLS[@]:0:$MAX_SKILLS}")
+    MATCHED_SCORES=("${ALL_MATCHED_SCORES[@]:0:$MAX_SKILLS}")
 fi
 
-MATCHED_SKILLS=("${DISPLAY_SKILLS[@]}")
-MATCHED_SCORES=("${DISPLAY_SCORES[@]}")
+# Every suggestion for this prompt, pinned first — backs the transcript notice
+# and the closing log line.
+ALL_SUGGESTED=()
+for i in "${!PINNED_SKILLS[@]}"; do ALL_SUGGESTED+=("${PINNED_SKILLS[$i]}"); done
+for i in "${!ALL_MATCHED_SKILLS[@]}"; do ALL_SUGGESTED+=("${ALL_MATCHED_SKILLS[$i]}"); done
+
+# Renders one skill's banner entry. Called with a score for scored matches and
+# without one for pinned skills, which have no score to report.
+render_skill() {
+    local skill=$1
+    local score=${2:-}
+    local description confidence emoji score_label plugin origin
+
+    description=$(jq -r --arg name "$skill" '.skills[$name].description' "$SKILL_RULES")
+
+    # Confidence label is purely cosmetic — it does not gate inclusion.
+    if [ -z "$score" ]; then
+        confidence="ALWAYS"
+        emoji="📌"
+        score_label="always suggested"
+    elif [ "$score" -ge "$HIGH_CONFIDENCE" ]; then
+        confidence="HIGH"
+        emoji="🟢"
+        score_label="score: $score"
+    elif [ "$score" -ge "$MEDIUM_CONFIDENCE" ]; then
+        confidence="MEDIUM"
+        emoji="🟡"
+        score_label="score: $score"
+    else
+        confidence="LOW"
+        emoji="🟠"
+        score_label="score: $score"
+    fi
+
+    plugin=$(jq -r --arg name "$skill" '.skills[$name].plugin // empty' "$SKILL_RULES")
+
+    printf '📚 %s\n' "$skill"
+    printf '   Description: %s\n' "$description"
+    printf '   Confidence: %s %s (%s)\n' "$emoji" "$confidence" "$score_label"
+    if [ -n "$plugin" ]; then
+        printf '   Plugin: %s\n' "$plugin"
+        printf '   Invoke: %s\n' "$skill"
+    else
+        # Origin scope decides where the SKILL.md lives: user-scope skills
+        # sit under ~/.claude/skills, project skills under .claude/skills.
+        origin=$(jq -r --arg name "$skill" '.skills[$name].origin // "project"' "$SKILL_RULES")
+        if [ "$origin" = "user" ]; then
+            printf '   Path: ~/.claude/skills/%s/SKILL.md\n' "$skill"
+        else
+            printf '   Path: .claude/skills/%s/SKILL.md\n' "$skill"
+        fi
+    fi
+    echo ""
+}
 
 # Build the suggestion banner into a string. We emit it as
 # `hookSpecificOutput.additionalContext` in a JSON envelope (the documented
@@ -345,43 +424,14 @@ CONTEXT=$({
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
     echo ""
 
+    # Pinned skills lead the banner — they are standing instructions, not
+    # findings about this particular prompt.
+    for i in "${!PINNED_SKILLS[@]}"; do
+        render_skill "${PINNED_SKILLS[$i]}"
+    done
+
     for i in "${!MATCHED_SKILLS[@]}"; do
-        skill="${MATCHED_SKILLS[$i]}"
-        score="${MATCHED_SCORES[$i]}"
-        description=$(jq -r --arg name "$skill" '.skills[$name].description' "$SKILL_RULES")
-
-        # Confidence label is purely cosmetic — it does not gate inclusion.
-        if [ "$score" -ge "$HIGH_CONFIDENCE" ]; then
-            confidence="HIGH"
-            emoji="🟢"
-        elif [ "$score" -ge "$MEDIUM_CONFIDENCE" ]; then
-            confidence="MEDIUM"
-            emoji="🟡"
-        else
-            confidence="LOW"
-            emoji="🟠"
-        fi
-        score_label="score: $score"
-
-        plugin=$(jq -r --arg name "$skill" '.skills[$name].plugin // empty' "$SKILL_RULES")
-
-        printf '📚 %s\n' "$skill"
-        printf '   Description: %s\n' "$description"
-        printf '   Confidence: %s %s (%s)\n' "$emoji" "$confidence" "$score_label"
-        if [ -n "$plugin" ]; then
-            printf '   Plugin: %s\n' "$plugin"
-            printf '   Invoke: %s\n' "$skill"
-        else
-            # Origin scope decides where the SKILL.md lives: user-scope skills
-            # sit under ~/.claude/skills, project skills under .claude/skills.
-            origin=$(jq -r --arg name "$skill" '.skills[$name].origin // "project"' "$SKILL_RULES")
-            if [ "$origin" = "user" ]; then
-                printf '   Path: ~/.claude/skills/%s/SKILL.md\n' "$skill"
-            else
-                printf '   Path: .claude/skills/%s/SKILL.md\n' "$skill"
-            fi
-        fi
-        echo ""
+        render_skill "${MATCHED_SKILLS[$i]}" "${MATCHED_SCORES[$i]}"
     done
 
     if [ ${#CUTOFF_SKILLS[@]} -gt 0 ]; then
@@ -402,7 +452,7 @@ CONTEXT=$({
 
 # Short transcript-visible notice (user sees this, model does not). Lists the
 # matched skills so we can tell at a glance which ones the hook surfaced.
-SYSTEM_MESSAGE="💡 Suggested skills: ${ALL_MATCHED_SKILLS[*]}"
+SYSTEM_MESSAGE="💡 Suggested skills: ${ALL_SUGGESTED[*]}"
 
 # Hand the buffers to jq so it handles all JSON escaping (quotes, newlines, etc.).
 #   additionalContext — injected into the model's context (Claude sees it)
@@ -419,6 +469,6 @@ jq -n \
     }'
 
 # Final picks for this run; pairs with the per-skill scoring trace above.
-log_line "  Suggested skills: ${ALL_MATCHED_SKILLS[*]}"
+log_line "  Suggested skills: ${ALL_SUGGESTED[*]}"
 
 exit 0

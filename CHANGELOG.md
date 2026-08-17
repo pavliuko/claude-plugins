@@ -14,7 +14,15 @@ Format:
 
 ---
 
-## 2026-08-06 [english]
+## 2026-08-17 [skill-suggestion]
+
+- Added a per-skill `"always": true` flag that pins a skill to every prompt, replacing the `"intentPatterns": [".*"]` workaround that had been used for `ponytail:ponytail`. That workaround does match every prompt, but it scores exactly `intentWeight` (3) — the threshold floor — so the pinned skill was permanently rendered last and labeled `🟠 LOW`, reading as the weakest suggestion on screen when it was meant to be unconditional. User request: "instead of this workaround that we've done in the rules.json for ponytail i want to improve this plugin and add the capability to add skills to rules that will always be suggested with a high score".
+- Pinned skills carry no score at all rather than a synthetic high one, and render as `📌 ALWAYS (always suggested)`. A fabricated `6` would be indistinguishable from a genuinely earned `6`, which defeats the point of the score being a signal. They are listed ahead of scored matches for the same reason: a standing instruction isn't a finding about this particular prompt.
+- Pins are exempt from `maxSkillsPerPrompt` and skip `excludePatterns` entirely. Exempt from the cap because with the default cap of 3, pinning three skills would push every real match into the "also matched" footer. Skipping exclusions was the user's call over the alternative of letting them veto a pin: "always means always". A pin is still gated by `enabledPlugins` — Claude Code couldn't invoke a disabled plugin's skill anyway.
+- Fixed a latent `set -u` crash surfaced by this feature: the display-cap block copied `MATCHED_SKILLS` with `("${arr[@]}")`, which bash 3.2 (macOS stock, per the script's shebang) rejects as an unbound variable when the array is empty. Previously unreachable because the hook exited early when nothing matched; a pinned-only prompt — the common case — now reaches that code with zero scored matches. The block was rewritten guarded, which also let the `DISPLAY_*` intermediate arrays go.
+- Extracted the per-skill banner rendering into `render_skill()` so pinned and scored entries share one code path instead of two copies of the same 20 lines.
+- Version bumped to 1.1.0 in both `plugin.json` and `marketplace.json` — additive feature, existing rules files keep working untouched.
+- Folded in a `systemMessage`-only envelope on the no-match path ("no matching skills for this prompt"), so the user can see the hook ran without anything reaching the model's context. This existed only as an uncommitted edit in the local marketplace clone; committing it upstream is what allowed that clone to be reset and pulled without losing the change.
 
 - Removed the plugin: deleted `plugins/english/`, its `marketplace.json` entry, and its `README.md` references (table row, install command, layout tree). User request: "remove english plugin from plugin repo". The 2026-07-28 entry below is kept as-is — it records why the hook was built the way it was, which is the part worth having if the idea ever comes back.
 

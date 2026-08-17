@@ -10,6 +10,29 @@ score = keywords*KW + intentPatterns*IW + pathPatterns*PW
 
 A skill is suggested when `score >= confidenceThreshold` and no `excludePatterns` substring matches the prompt. Weights, thresholds and confidence cut-offs come from `rules.json` → `.config.scoring`.
 
+## Always-on skills
+
+Some skills are standing instructions rather than a match on this particular prompt — a coding-style enforcer, a house-rules skill. Give the entry `"always": true`:
+
+```jsonc
+"ponytail:ponytail": {
+  "plugin": "ponytail@ponytail",
+  "description": "Forces the laziest solution that actually works.",
+  "always": true
+}
+```
+
+A pinned skill:
+
+- is suggested on **every** prompt, and needs no `promptTriggers` at all;
+- shows as `📌 ALWAYS (always suggested)` instead of a confidence band — there is no score to report;
+- is listed **before** the scored matches, and does **not** consume a `maxSkillsPerPrompt` slot, so pinning never pushes a real match into the "also matched" footer;
+- ignores `excludePatterns`. Always means always — drop the flag if you want conditions.
+
+Still gated by `enabledPlugins`: a pin whose plugin is disabled in every settings scope is skipped, same as any other skill.
+
+Don't fake this with `"intentPatterns": [".*"]`. That matches every prompt but scores exactly `intentWeight` (3), so the skill sits permanently at the bottom of the list labeled `🟠 LOW` — the opposite of the intent.
+
 ## Rules scopes
 
 The hook reads `rules.json` from two scopes and merges them:
