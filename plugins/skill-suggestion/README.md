@@ -26,20 +26,26 @@ Pinned skills are **not** sent to Claude as suggestions. They get their own sect
 
 ```
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-📌 REQUIRED SKILLS — INVOKE BEFORE RESPONDING
+📌 REQUIRED SKILLS — MUST BE ACTIVE THIS SESSION
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 📌 ponytail:ponytail
    Description: Forces the laziest solution that actually works.
-   Status: REQUIRED — always active, not conditional on this prompt
+   Status: REQUIRED — invoke once per session, then stays in force
    Plugin: ponytail@ponytail
    Invoke: ponytail:ponytail
 
-❗ These are not suggestions. Invoke every skill listed above via the Skill
-   tool now, as your first action this turn, then follow its instructions
-   for the rest of the turn. They are pinned by the user's configuration,
-   so do not weigh them against the prompt or skip them as irrelevant.
+❗ Not suggestions — pinned by the user's config, so don't skip them as
+   irrelevant. Invoke each one above via the Skill tool as your first
+   action, unless its instructions are already in your context from this
+   session: then keep following them, don't re-invoke.
 ```
+
+**Once per session, not once per prompt.** The banner is emitted on every prompt — a `UserPromptSubmit` hook has no other moment to speak — but the instruction carries its own escape clause, so Claude invokes the skill on the first prompt and simply keeps following it afterwards. The check is delegated to Claude on purpose: only Claude can see whether the skill's instructions are still in its context, which makes this self-healing when a compaction drops them. The alternative — a per-session marker file in the hook — would go quiet in exactly that case, and would need cleaning up.
+
+That rests on documented behaviour — [Skill content lifecycle](https://code.claude.com/docs/en/skills#skill-content-lifecycle): "the rendered `SKILL.md` content enters the conversation as a single message and stays there for the rest of the session … Claude Code does not re-read the skill file on later turns." A re-invocation of an unchanged skill only adds a short "already loaded" note rather than a second copy, so the wording saves a redundant tool call rather than a pile of tokens.
+
+> **Don't pin a skill that relies on `allowed-tools` or `disallowed-tools`.** Both are per-turn, not per-session: an `allowed-tools` grant "clears when you send your next message" and re-applies only when the skill is invoked again, and `disallowed-tools` clears the same way. Such a skill needs invoking on *every* turn, which is exactly what the "one load per session is enough" wording tells Claude not to do — so the tool grants silently stop applying from the second prompt onward. Skills whose value is instructions (style enforcers, house rules) are safe; skills whose value is a permission grant are not. Note the same page's caveat that a pin invoked **with arguments** or using a dynamic-context command renders differently each time, so its full content *is* appended again on re-invocation.
 
 Scored matches keep their own `🎯 SUGGESTED SKILLS` section below, with the softer "consider using these if they're relevant" framing. Either section is omitted when empty, so a prompt with only a pin sends only the imperative.
 

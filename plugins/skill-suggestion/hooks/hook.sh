@@ -377,7 +377,7 @@ render_skill() {
     if [ -z "$score" ]; then
         printf '📌 %s\n' "$skill"
         printf '   Description: %s\n' "$description"
-        printf '   Status: REQUIRED — always active, not conditional on this prompt\n'
+        printf '   Status: REQUIRED — invoke once per session, then stays in force\n'
     else
         # Confidence label is purely cosmetic — it does not gate inclusion.
         if [ "$score" -ge "$HIGH_CONFIDENCE" ]; then
@@ -425,7 +425,7 @@ CONTEXT=$({
     # Either section is omitted entirely when it has nothing in it.
     if [ ${#PINNED_SKILLS[@]} -gt 0 ]; then
         echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-        echo "📌 REQUIRED SKILLS — INVOKE BEFORE RESPONDING"
+        echo "📌 REQUIRED SKILLS — MUST BE ACTIVE THIS SESSION"
         echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
         echo ""
 
@@ -433,10 +433,10 @@ CONTEXT=$({
             render_skill "${PINNED_SKILLS[$i]}"
         done
 
-        echo "❗ These are not suggestions. Invoke every skill listed above via the Skill"
-        echo "   tool now, as your first action this turn, then follow its instructions"
-        echo "   for the rest of the turn. They are pinned by the user's configuration,"
-        echo "   so do not weigh them against the prompt or skip them as irrelevant."
+        echo "❗ Not suggestions — pinned by the user's config, so don't skip them as"
+        echo "   irrelevant. Invoke each one above via the Skill tool as your first"
+        echo "   action, unless its instructions are already in your context from this"
+        echo "   session: then keep following them, don't re-invoke."
         echo ""
     fi
 
