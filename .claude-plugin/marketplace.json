@@ -35,7 +35,7 @@
       "name": "skill-suggestion",
       "source": "./plugins/skill-suggestion",
       "description": "Scores user prompts against project-defined skill triggers and injects a ranked suggestion banner into the model's context.",
-      "version": "1.3.0",
+      "version": "2.0.0",
       "author": {
         "name": "pavliuko",
         "email": "pavliuk.aleksandr@gmail.com"

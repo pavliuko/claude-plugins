@@ -1,6 +1,6 @@
 # skill-suggestion
 
-`UserPromptSubmit` hook that scores every skill in your `rules.json` against the submitted prompt and prints a ranked suggestion banner so Claude sees it alongside the user's message.
+Two hooks over one `rules.json`: `SessionStart` delivers your **required** skills once, at the top of the session, and `UserPromptSubmit` scores every other skill against each prompt and prints a ranked **suggestion** banner alongside the user's message.
 
 ## Scoring
 
@@ -10,15 +10,15 @@ score = keywords*KW + intentPatterns*IW + pathPatterns*PW
 
 A skill is suggested when `score >= confidenceThreshold` and no `excludePatterns` substring matches the prompt. Weights, thresholds and confidence cut-offs come from `rules.json` → `.config.scoring`.
 
-## Required skills (always-on)
+## Required skills
 
-Some skills are standing instructions rather than a guess about this particular prompt — a coding-style enforcer, a house-rules skill. Give the entry `"always": true`:
+Some skills are standing instructions rather than a guess about this particular prompt — a coding-style enforcer, a house-rules skill. Give the entry `"required": true`:
 
 ```jsonc
 "ponytail:ponytail": {
   "plugin": "ponytail@ponytail",
   "description": "Forces the laziest solution that actually works.",
-  "always": true
+  "required": true
 }
 ```
 
@@ -35,13 +35,15 @@ Pinned skills are **not** sent to Claude as suggestions. They get their own sect
    Plugin: ponytail@ponytail
    Invoke: ponytail:ponytail
 
-❗ Not suggestions — pinned by the user's config, so don't skip them as
-   irrelevant. Invoke each one above via the Skill tool as your first
-   action, unless its instructions are already in your context from this
-   session: then keep following them, don't re-invoke.
+❗ Not suggestions — required by the user's config, so they apply to every
+   prompt this session regardless of topic. Invoke each one above via the
+   Skill tool before replying, then keep following it for the rest of the
+   session. Skip the call only if it is already in your context.
 ```
 
-**Once per session, not once per prompt.** The banner is emitted on every prompt — a `UserPromptSubmit` hook has no other moment to speak — but the instruction carries its own escape clause, so Claude invokes the skill on the first prompt and simply keeps following it afterwards. The check is delegated to Claude on purpose: only Claude can see whether the skill's instructions are still in its context, which makes this self-healing when a compaction drops them. The alternative — a per-session marker file in the hook — would go quiet in exactly that case, and would need cleaning up.
+**Delivered once, by `SessionStart`.** Pins carry no prompt-dependent logic, so they don't belong in a per-prompt hook — they are sent once at the top of the session and never repeated. The registered matchers are `startup|resume|clear|compact|fork`: the `compact` one is the important one, since it re-asserts the pins right after a compaction would otherwise have summarised them away. `UserPromptSubmit` then handles only scored matches, and never mentions pins at all.
+
+The footer still says to skip the call if the skill is already in context, which covers the `compact` and `resume` re-fires where it may well still be there.
 
 That rests on documented behaviour — [Skill content lifecycle](https://code.claude.com/docs/en/skills#skill-content-lifecycle): "the rendered `SKILL.md` content enters the conversation as a single message and stays there for the rest of the session … Claude Code does not re-read the skill file on later turns." A re-invocation of an unchanged skill only adds a short "already loaded" note rather than a second copy, so the wording saves a redundant tool call rather than a pile of tokens.
 
@@ -54,7 +56,7 @@ A pinned skill:
 - applies to **every** prompt, and needs no `promptTriggers` at all;
 - carries no score — a fabricated `HIGH` would be indistinguishable from an earned one;
 - does **not** consume a `maxSkillsPerPrompt` slot, so pinning never pushes a real match into the "also matched" footer;
-- ignores `excludePatterns`. Always means always — drop the flag if you want conditions.
+- ignores `excludePatterns`. Required means required — drop the flag if you want conditions.
 
 Still gated by `enabledPlugins`: a pin whose plugin is disabled in every settings scope is skipped, same as any other skill.
 
@@ -65,7 +67,7 @@ The transcript notice and log distinguish the two kinds:
 ```
 
 ```
-  📌 Required (always, sent as an instruction): ponytail:ponytail
+  📌 Required (sent as an instruction): ponytail:ponytail
   ✓ Matched: developing-swift-style (score=13, keywords=5, intents=1, paths=0)
   → Required (instructed): ponytail:ponytail
   → Suggested (optional): developing-swift-style
@@ -179,6 +181,20 @@ The skill is shipped by an installed plugin and invoked by name through the `Ski
 The hook only considers a plugin-backed skill when that plugin is listed under `enabledPlugins` in any of `~/.claude/settings.json`, `$CLAUDE_PROJECT_DIR/.claude/settings.json`, or `$CLAUDE_PROJECT_DIR/.claude/settings.local.json`. Skills whose plugin isn't enabled in any scope are silently skipped (and logged) — Claude couldn't invoke them anyway.
 
 Mix both freely in one `rules.json`: project skills for conventions specific to the repo, plugin skills for reusable workflows you've installed from a marketplace.
+
+## Layout
+
+```
+hooks/
+├── hooks.json           # registers both events
+├── lib.sh               # shared: rules merge, enabledPlugins gate, renderer, envelope
+├── require-skills.sh    # SessionStart    → pinned skills, once per session
+└── suggest-skills.sh    # UserPromptSubmit → scored matches, per prompt
+```
+
+`lib.sh` is sourced, never executed. Sourcing it has side effects by design: it locates and merges both rules scopes into `$SKILL_RULES`, reads and validates the payload into `$EVENT_DATA`, and exits 0 outright when no `rules.json` exists — so a caller that reaches the line after `source` already has a usable ruleset.
+
+The split follows the events, not the code: `require-skills.sh` never scores (there is no prompt at `SessionStart`) and `suggest-skills.sh` never renders a pin (already delivered). What they genuinely share — the two-scope merge with its union/project-wins/deep-merge decisions, the `enabledPlugins` gate, `render_skill`, and the JSON envelope — lives in `lib.sh` once, because two copies of that merge would eventually disagree about which skills exist, silently.
 
 ## Requirements
 
