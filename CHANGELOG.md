@@ -14,7 +14,16 @@ Format:
 
 ---
 
-## 2026-08-17 [skill-suggestion]
+## 2026-08-17 [skill-suggestion] — 1.2.0
+
+- Pinned skills are now delivered to Claude as an instruction rather than a suggestion, across all three output channels. The 1.1.0 pin only won on ordering and its `📌 ALWAYS` label while the banner footer still read "Consider using these skills **if they're relevant** to this task" — the right hedge for a scored guess and the wrong one for a standing instruction, since the whole point of pinning is that relevance is not in question. User request: "pinned skills are not suggestions anymore, we should send it as command to claude to perform. #1, #2, #3 needs to be changed".
+- Channel 1 (`additionalContext`, what the model reads): pins moved out of the shared `🎯 SUGGESTED SKILLS` banner into their own `📌 REQUIRED SKILLS — INVOKE BEFORE RESPONDING` section, per-entry `Status: REQUIRED — always active, not conditional on this prompt` in place of a confidence band, closed by an imperative footer ("These are not suggestions. Invoke every skill listed above … as your first action this turn … do not weigh them against the prompt or skip them as irrelevant"). Scored matches keep the softer wording in their own section; each section is skipped when empty, so a pin-only prompt sends only the imperative and never the word "consider".
+- Channel 2 (`systemMessage`, what the user sees): split into `📌 Required skills: … · 💡 Suggested skills: …` so the transcript shows which skills were handed over as an order and which as a hint.
+- Channel 3 (the log): `📌 Pinned (always)` became `📌 Required (always, sent as an instruction)`, and the single closing `Suggested skills:` line became separate `→ Required (instructed):` / `→ Suggested (optional):` lines. The log is the only record of what was actually sent, so collapsing the two kinds into one line made pin behaviour unverifiable after the fact.
+- Dropped the `ALL_SUGGESTED` array that merged pins and matches — nothing needs the combined list now that every channel reports the two separately.
+- Fixed a `set -u` crash in the new `systemMessage` builder: `"$SYSTEM_MESSAGE💡 …"` parses the emoji as part of the variable name, so bash aborted with `SYSTEM_MESSAGE💡: unbound variable` on any prompt that had both a pin and a scored match. Caught by the self-check, not by review; `${SYSTEM_MESSAGE}💡` fixes it and the braces are commented as load-bearing.
+
+## 2026-08-17 [skill-suggestion] — 1.1.0
 
 - Added a per-skill `"always": true` flag that pins a skill to every prompt, replacing the `"intentPatterns": [".*"]` workaround that had been used for `ponytail:ponytail`. That workaround does match every prompt, but it scores exactly `intentWeight` (3) — the threshold floor — so the pinned skill was permanently rendered last and labeled `🟠 LOW`, reading as the weakest suggestion on screen when it was meant to be unconditional. User request: "instead of this workaround that we've done in the rules.json for ponytail i want to improve this plugin and add the capability to add skills to rules that will always be suggested with a high score".
 - Pinned skills carry no score at all rather than a synthetic high one, and render as `📌 ALWAYS (always suggested)`. A fabricated `6` would be indistinguishable from a genuinely earned `6`, which defeats the point of the score being a signal. They are listed ahead of scored matches for the same reason: a standing instruction isn't a finding about this particular prompt.
@@ -23,6 +32,8 @@ Format:
 - Extracted the per-skill banner rendering into `render_skill()` so pinned and scored entries share one code path instead of two copies of the same 20 lines.
 - Version bumped to 1.1.0 in both `plugin.json` and `marketplace.json` — additive feature, existing rules files keep working untouched.
 - Folded in a `systemMessage`-only envelope on the no-match path ("no matching skills for this prompt"), so the user can see the hook ran without anything reaching the model's context. This existed only as an uncommitted edit in the local marketplace clone; committing it upstream is what allowed that clone to be reset and pulled without losing the change.
+
+## 2026-08-06 [english]
 
 - Removed the plugin: deleted `plugins/english/`, its `marketplace.json` entry, and its `README.md` references (table row, install command, layout tree). User request: "remove english plugin from plugin repo". The 2026-07-28 entry below is kept as-is — it records why the hook was built the way it was, which is the part worth having if the idea ever comes back.
 

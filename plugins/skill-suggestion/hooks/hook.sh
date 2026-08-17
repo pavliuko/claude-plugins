@@ -12,9 +12,11 @@
 # A skill is suggested when score >= confidenceThreshold AND no excludePattern
 # matches. Weights and thresholds come from rules.json (.config.scoring).
 #
-# A skill entry with `"always": true` opts out of all of the above: it is
-# suggested on every prompt, needs no promptTriggers, ignores excludePatterns,
-# and does not consume a maxSkillsPerPrompt slot.
+# A skill entry with `"always": true` opts out of all of the above: it needs no
+# promptTriggers, ignores excludePatterns, and does not consume a
+# maxSkillsPerPrompt slot. Such skills are emitted in their own REQUIRED section
+# phrased as an instruction to invoke them, not as a suggestion to weigh — the
+# user pinned them precisely because relevance is not in question.
 #
 # Inputs:  stdin  — UserPromptSubmit JSON ({ "prompt": "..." , ... })
 #          files  — $HOME/.claude/skill-suggestion/rules.json          (user scope)
@@ -278,7 +280,7 @@ while IFS= read -r skill; do
     # counting, no exclusion check. "Always" means always.
     if [ "$(jq -r --arg name "$skill" '.skills[$name].always // false' "$SKILL_RULES")" = "true" ]; then
         PINNED_SKILLS+=("$skill")
-        log_line "  📌 Pinned (always): $skill"
+        log_line "  📌 Required (always, sent as an instruction): $skill"
         continue
     fi
 
@@ -358,45 +360,43 @@ if [ ${#MATCHED_SKILLS[@]} -gt 0 ]; then
     MATCHED_SCORES=("${ALL_MATCHED_SCORES[@]:0:$MAX_SKILLS}")
 fi
 
-# Every suggestion for this prompt, pinned first — backs the transcript notice
-# and the closing log line.
-ALL_SUGGESTED=()
-for i in "${!PINNED_SKILLS[@]}"; do ALL_SUGGESTED+=("${PINNED_SKILLS[$i]}"); done
-for i in "${!ALL_MATCHED_SKILLS[@]}"; do ALL_SUGGESTED+=("${ALL_MATCHED_SKILLS[$i]}"); done
-
 # Renders one skill's banner entry. Called with a score for scored matches and
 # without one for pinned skills, which have no score to report.
+#
+# The two forms are deliberately worded differently: a scored match is a guess
+# about this prompt and gets a confidence band, while a pinned skill is a
+# standing instruction and gets an imperative.
 render_skill() {
     local skill=$1
     local score=${2:-}
     local description confidence emoji score_label plugin origin
 
     description=$(jq -r --arg name "$skill" '.skills[$name].description' "$SKILL_RULES")
-
-    # Confidence label is purely cosmetic — it does not gate inclusion.
-    if [ -z "$score" ]; then
-        confidence="ALWAYS"
-        emoji="📌"
-        score_label="always suggested"
-    elif [ "$score" -ge "$HIGH_CONFIDENCE" ]; then
-        confidence="HIGH"
-        emoji="🟢"
-        score_label="score: $score"
-    elif [ "$score" -ge "$MEDIUM_CONFIDENCE" ]; then
-        confidence="MEDIUM"
-        emoji="🟡"
-        score_label="score: $score"
-    else
-        confidence="LOW"
-        emoji="🟠"
-        score_label="score: $score"
-    fi
-
     plugin=$(jq -r --arg name "$skill" '.skills[$name].plugin // empty' "$SKILL_RULES")
 
-    printf '📚 %s\n' "$skill"
-    printf '   Description: %s\n' "$description"
-    printf '   Confidence: %s %s (%s)\n' "$emoji" "$confidence" "$score_label"
+    if [ -z "$score" ]; then
+        printf '📌 %s\n' "$skill"
+        printf '   Description: %s\n' "$description"
+        printf '   Status: REQUIRED — always active, not conditional on this prompt\n'
+    else
+        # Confidence label is purely cosmetic — it does not gate inclusion.
+        if [ "$score" -ge "$HIGH_CONFIDENCE" ]; then
+            confidence="HIGH"
+            emoji="🟢"
+        elif [ "$score" -ge "$MEDIUM_CONFIDENCE" ]; then
+            confidence="MEDIUM"
+            emoji="🟡"
+        else
+            confidence="LOW"
+            emoji="🟠"
+        fi
+        score_label="score: $score"
+
+        printf '📚 %s\n' "$skill"
+        printf '   Description: %s\n' "$description"
+        printf '   Confidence: %s %s (%s)\n' "$emoji" "$confidence" "$score_label"
+    fi
+
     if [ -n "$plugin" ]; then
         printf '   Plugin: %s\n' "$plugin"
         printf '   Invoke: %s\n' "$skill"
@@ -419,40 +419,68 @@ render_skill() {
 # injects `additionalContext` into the model's context for this turn.
 CONTEXT=$({
     echo ""
-    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-    echo "🎯 SUGGESTED SKILLS"
-    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-    echo ""
 
-    # Pinned skills lead the banner — they are standing instructions, not
-    # findings about this particular prompt.
-    for i in "${!PINNED_SKILLS[@]}"; do
-        render_skill "${PINNED_SKILLS[$i]}"
-    done
+    # Pinned skills get their own section, ahead of and worded unlike the
+    # scored matches: an instruction to carry out, not a list to consider.
+    # Either section is omitted entirely when it has nothing in it.
+    if [ ${#PINNED_SKILLS[@]} -gt 0 ]; then
+        echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+        echo "📌 REQUIRED SKILLS — INVOKE BEFORE RESPONDING"
+        echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+        echo ""
 
-    for i in "${!MATCHED_SKILLS[@]}"; do
-        render_skill "${MATCHED_SKILLS[$i]}" "${MATCHED_SCORES[$i]}"
-    done
-
-    if [ ${#CUTOFF_SKILLS[@]} -gt 0 ]; then
-        echo "📋 Also matched (not shown above):"
-        for i in "${!CUTOFF_SKILLS[@]}"; do
-            skill="${CUTOFF_SKILLS[$i]}"
-            score="${CUTOFF_SCORES[$i]}"
-            printf '   • %s (score: %s)\n' "$skill" "$score"
+        for i in "${!PINNED_SKILLS[@]}"; do
+            render_skill "${PINNED_SKILLS[$i]}"
         done
+
+        echo "❗ These are not suggestions. Invoke every skill listed above via the Skill"
+        echo "   tool now, as your first action this turn, then follow its instructions"
+        echo "   for the rest of the turn. They are pinned by the user's configuration,"
+        echo "   so do not weigh them against the prompt or skip them as irrelevant."
         echo ""
     fi
 
-    echo "💡 Consider using these skills if they're relevant to this task."
-    echo "   Invoke a skill by name via the Skill tool."
-    echo ""
+    if [ ${#MATCHED_SKILLS[@]} -gt 0 ]; then
+        echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+        echo "🎯 SUGGESTED SKILLS"
+        echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+        echo ""
+
+        for i in "${!MATCHED_SKILLS[@]}"; do
+            render_skill "${MATCHED_SKILLS[$i]}" "${MATCHED_SCORES[$i]}"
+        done
+
+        if [ ${#CUTOFF_SKILLS[@]} -gt 0 ]; then
+            echo "📋 Also matched (not shown above):"
+            for i in "${!CUTOFF_SKILLS[@]}"; do
+                skill="${CUTOFF_SKILLS[$i]}"
+                score="${CUTOFF_SCORES[$i]}"
+                printf '   • %s (score: %s)\n' "$skill" "$score"
+            done
+            echo ""
+        fi
+
+        echo "💡 Consider using these skills if they're relevant to this task."
+        echo "   Invoke a skill by name via the Skill tool."
+        echo ""
+    fi
+
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 })
 
-# Short transcript-visible notice (user sees this, model does not). Lists the
-# matched skills so we can tell at a glance which ones the hook surfaced.
-SYSTEM_MESSAGE="💡 Suggested skills: ${ALL_SUGGESTED[*]}"
+# Short transcript-visible notice (user sees this, model does not). Required and
+# suggested are reported separately so it's clear at a glance which skills were
+# handed to Claude as an instruction and which as a hint.
+SYSTEM_MESSAGE=""
+if [ ${#PINNED_SKILLS[@]} -gt 0 ]; then
+    SYSTEM_MESSAGE="📌 Required skills: ${PINNED_SKILLS[*]}"
+fi
+if [ ${#ALL_MATCHED_SKILLS[@]} -gt 0 ]; then
+    [ -n "$SYSTEM_MESSAGE" ] && SYSTEM_MESSAGE="$SYSTEM_MESSAGE · "
+    # Braces are load-bearing: "$SYSTEM_MESSAGE💡" parses the emoji as part of
+    # the variable name and dies under `set -u`.
+    SYSTEM_MESSAGE="${SYSTEM_MESSAGE}💡 Suggested skills: ${ALL_MATCHED_SKILLS[*]}"
+fi
 
 # Hand the buffers to jq so it handles all JSON escaping (quotes, newlines, etc.).
 #   additionalContext — injected into the model's context (Claude sees it)
@@ -469,6 +497,11 @@ jq -n \
     }'
 
 # Final picks for this run; pairs with the per-skill scoring trace above.
-log_line "  Suggested skills: ${ALL_SUGGESTED[*]}"
+if [ ${#PINNED_SKILLS[@]} -gt 0 ]; then
+    log_line "  → Required (instructed): ${PINNED_SKILLS[*]}"
+fi
+if [ ${#ALL_MATCHED_SKILLS[@]} -gt 0 ]; then
+    log_line "  → Suggested (optional): ${ALL_MATCHED_SKILLS[*]}"
+fi
 
 exit 0

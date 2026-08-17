@@ -10,9 +10,9 @@ score = keywords*KW + intentPatterns*IW + pathPatterns*PW
 
 A skill is suggested when `score >= confidenceThreshold` and no `excludePatterns` substring matches the prompt. Weights, thresholds and confidence cut-offs come from `rules.json` → `.config.scoring`.
 
-## Always-on skills
+## Required skills (always-on)
 
-Some skills are standing instructions rather than a match on this particular prompt — a coding-style enforcer, a house-rules skill. Give the entry `"always": true`:
+Some skills are standing instructions rather than a guess about this particular prompt — a coding-style enforcer, a house-rules skill. Give the entry `"always": true`:
 
 ```jsonc
 "ponytail:ponytail": {
@@ -22,16 +22,50 @@ Some skills are standing instructions rather than a match on this particular pro
 }
 ```
 
+Pinned skills are **not** sent to Claude as suggestions. They get their own section, worded as an instruction to carry out:
+
+```
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📌 REQUIRED SKILLS — INVOKE BEFORE RESPONDING
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+📌 ponytail:ponytail
+   Description: Forces the laziest solution that actually works.
+   Status: REQUIRED — always active, not conditional on this prompt
+   Plugin: ponytail@ponytail
+   Invoke: ponytail:ponytail
+
+❗ These are not suggestions. Invoke every skill listed above via the Skill
+   tool now, as your first action this turn, then follow its instructions
+   for the rest of the turn. They are pinned by the user's configuration,
+   so do not weigh them against the prompt or skip them as irrelevant.
+```
+
+Scored matches keep their own `🎯 SUGGESTED SKILLS` section below, with the softer "consider using these if they're relevant" framing. Either section is omitted when empty, so a prompt with only a pin sends only the imperative.
+
 A pinned skill:
 
-- is suggested on **every** prompt, and needs no `promptTriggers` at all;
-- shows as `📌 ALWAYS (always suggested)` instead of a confidence band — there is no score to report;
-- is listed **before** the scored matches, and does **not** consume a `maxSkillsPerPrompt` slot, so pinning never pushes a real match into the "also matched" footer;
+- applies to **every** prompt, and needs no `promptTriggers` at all;
+- carries no score — a fabricated `HIGH` would be indistinguishable from an earned one;
+- does **not** consume a `maxSkillsPerPrompt` slot, so pinning never pushes a real match into the "also matched" footer;
 - ignores `excludePatterns`. Always means always — drop the flag if you want conditions.
 
 Still gated by `enabledPlugins`: a pin whose plugin is disabled in every settings scope is skipped, same as any other skill.
 
-Don't fake this with `"intentPatterns": [".*"]`. That matches every prompt but scores exactly `intentWeight` (3), so the skill sits permanently at the bottom of the list labeled `🟠 LOW` — the opposite of the intent.
+The transcript notice and log distinguish the two kinds:
+
+```
+📌 Required skills: ponytail:ponytail · 💡 Suggested skills: developing-swift-style
+```
+
+```
+  📌 Required (always, sent as an instruction): ponytail:ponytail
+  ✓ Matched: developing-swift-style (score=13, keywords=5, intents=1, paths=0)
+  → Required (instructed): ponytail:ponytail
+  → Suggested (optional): developing-swift-style
+```
+
+Don't fake this with `"intentPatterns": [".*"]`. That matches every prompt but scores exactly `intentWeight` (3), so the skill sits permanently at the bottom of the suggestion list labeled `🟠 LOW` — the opposite of the intent.
 
 ## Rules scopes
 
