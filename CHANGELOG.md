@@ -14,6 +14,13 @@ Format:
 
 ---
 
+## 2026-08-18 [interviewme] — 1.0.0
+
+- New plugin with a single command, `/interviewme`, whose whole body is the line "Interview me with any questions you might have" — a shorthand for flipping the conversation around when Claude has open questions but is about to guess instead of asking. User request: "create simple command like cmp with text \"Interview me with any questions you might have\"".
+- Built as its own plugin rather than a second command inside `cmp`, matching how `cmp` itself is packaged: one shorthand, one plugin, installable on its own. `disable-model-invocation: true` for the same reason `cmp` sets it — this is a phrase the user types, not something the model should decide to fire.
+- Named `interviewme` after the sentence itself, not the shorter `interview` it started as — user request: "rename command to interviewme". The plugin and its directory were renamed to match, keeping the `cmp` pattern of one shorthand per identically-named plugin; the `interview` keyword stays in the manifest so search still finds it.
+- No prompt engineering beyond the literal sentence. Anything more (question count, format, topic scoping) would be inventing a spec the request didn't have.
+
 ## 2026-08-17 [skill-suggestion] — 2.0.0
 
 - **Breaking:** the skill-entry flag renamed from `"always": true` to `"required": true`. The config key was the last place still calling these "always" skills while every user-facing surface — banner header, `Status:` line, log lines, transcript notice, README section — had settled on "required" since 1.2.0. User request: "change rules config key from always to required". Major version because a `rules.json` written for 1.1.0–1.5.0 silently stops pinning: an unrecognised `always` key is simply ignored, so the skill drops into normal scoring and, with no `promptTriggers`, scores 0 and vanishes. Fix is a one-word edit per entry.

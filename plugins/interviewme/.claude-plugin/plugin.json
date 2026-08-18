@@ -1,0 +1,19 @@
+{
+  "name": "interviewme",
+  "version": "1.0.0",
+  "description": "Shorthand slash command that asks Claude to interview you with any questions it might have.",
+  "author": {
+    "name": "pavliuko",
+    "email": "pavliuk.aleksandr@gmail.com"
+  },
+  "repository": "https://github.com/pavliuko/claude-plugins",
+  "license": "MIT",
+  "keywords": [
+    "interview",
+    "questions",
+    "clarification",
+    "slash-command",
+    "productivity"
+  ],
+  "category": "productivity"
+}
