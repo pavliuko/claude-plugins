@@ -14,6 +14,10 @@ Format:
 
 ---
 
+## 2026-08-20 [cmp, interviewme] — 1.1.0
+
+- Removed `disable-model-invocation: true` from both commands' frontmatter, so the model may now invoke them itself instead of only the user. User request: "remove disable model invokation header from commands". Both plugins bumped to 1.1.0.
+
 ## 2026-08-18 [interviewme] — 1.0.0
 
 - New plugin with a single command, `/interviewme`, whose whole body is the line "Interview me with any questions you might have" — a shorthand for flipping the conversation around when Claude has open questions but is about to guess instead of asking. User request: "create simple command like cmp with text \"Interview me with any questions you might have\"".
