@@ -90,7 +90,26 @@ Merge semantics:
 - **Config** — deep-merged key by key, project values winning. A project can override just `confidenceThreshold` and inherit everything else from the user scope.
 - Either file may be absent; a malformed file is treated as empty so one broken scope never disables the other.
 
-The `skill-suggestion.log` scoring trace is written next to each scope's `rules.json`: the user log when user rules exist, the project log when project rules exist — both logs get the same lines when both scopes exist. A scope without rules gets no log, so a user-scope-only setup never creates `.claude/` directories inside projects.
+### Activation log
+
+Each scope with a `rules.json` gets its own scoring trace; both logs get the same lines when both scopes exist. A scope without rules gets no log, so a user-scope-only setup never creates `.claude/` directories inside projects.
+
+Two `config` keys control the log, and they are read **per scope from that scope's own file** — not from the merged config — so a project can neither silence nor redirect the user log:
+
+| Key | Default | Meaning |
+|-----|---------|---------|
+| `logActivations` | `true` | `false` turns this scope's log off entirely (no file, no directory). |
+| `logPath` | `skill-suggestion.log` next to the scope's `rules.json` | Where this scope's log lands. Relative paths resolve against the scope root — `~/.claude/` for user rules, `$CLAUDE_PROJECT_DIR/` for project rules. `~/…` and absolute paths are used as written. |
+
+```jsonc
+// .claude/skill-suggestion/rules.json  →  <project>/.claude/logs/skill-suggestion.log
+"config": { "logPath": ".claude/logs/skill-suggestion.log" }
+
+// ~/.claude/skill-suggestion/rules.json  →  ~/.claude/logs/skill-suggestion.log
+"config": { "logPath": "logs/skill-suggestion.log" }
+```
+
+Unknown `config` keys (including unknown `config.scoring` keys) are reported in the log once per run — `⚠ Unknown config key in project rules: logpath` — so a typo or a leftover from another tool never sits there silently ignored.
 
 If neither `rules.json` exists the hook silently no-ops, so installing the plugin is harmless until you opt in.
 
@@ -130,6 +149,8 @@ If neither `rules.json` exists the hook silently no-ops, so installing the plugi
   },
   "config": {
     "maxSkillsPerPrompt": 3,
+    "logActivations": true,                          // optional — false disables this scope's log
+    "logPath": ".claude/logs/skill-suggestion.log",  // optional — see "Activation log" above
     "scoring": {
       "keywordWeight": 2,
       "intentWeight": 3,
@@ -249,5 +270,5 @@ Add more skills as needed — see the [`rules.json` shape](#rulesjson-shape) and
 ## Notes
 
 - The hook always exits 0; it never blocks the prompt.
-- Logs are append-only — rotate or delete each scope's `skill-suggestion.log` yourself if it grows.
+- Logs are append-only — rotate or delete each scope's log yourself if it grows, or set `logActivations: false` in that scope.
 - Path matching uses bash globs with `globstar`/`extglob`/`nocaseglob`, so `**/*.swift` works.

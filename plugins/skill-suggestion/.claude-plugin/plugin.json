@@ -1,6 +1,6 @@
 {
   "name": "skill-suggestion",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "description": "Scores user prompts against project-defined skill triggers and injects a ranked suggestion banner into the model's context.",
   "author": {
     "name": "pavliuko",

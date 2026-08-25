@@ -14,6 +14,14 @@ Format:
 
 ---
 
+## 2026-08-25 [skill-suggestion] — 2.1.0
+
+- `config.logActivations` and `config.logPath` are now real. Both keys sat in a consumer `rules.json` (`BulkSource-iOS-SECOND/.claude/skill-suggestion/rules.json`, pointing at `.claude/logs/skill-suggestion.log`) while the hook kept writing `.claude/skill-suggestion/skill-suggestion.log` — neither the plugin nor the pre-plugin local hook it replaced (consumer commit `f9a0e77b`) had ever read them. Reported by a peer Claude session in that repo; user chose "implement both keys" over deleting the dead config.
+- Both keys are read **per scope from that scope's own file**, not from the merged config — user request confirmed the recommendation "per scope, relative to scope root". A relative `logPath` resolves against `~/.claude/` for user rules and `$CLAUDE_PROJECT_DIR/` for project rules; `~/…` and absolute paths are used as written. Reason: the merged, project-wins alternative would let a project silence or relocate the user log and break the existing invariant that a user-scope-only setup never creates `.claude/` directories inside projects. Defaults are unchanged (`skill-suggestion.log` next to each scope's `rules.json`), so existing installs log exactly where they did.
+- `logActivations: false` is checked with an explicit `== false` test rather than jq's `// true` — the alternative operator treats `false` as missing and would have made the switch impossible to turn off.
+- Unknown `config` keys (and unknown `config.scoring` keys) are now logged once per run as `⚠ Unknown config key in <scope> rules: <key>`. User picked "log warning line" over silent (current) and stderr. This is the mechanism that would have surfaced the dead keys above months earlier.
+- `read_rules()` moved above the log setup in `lib.sh` because log resolution now needs it; no behaviour change.
+
 ## 2026-08-20 [cmp, interviewme] — 1.1.0
 
 - Removed `disable-model-invocation: true` from both commands' frontmatter, so the model may now invoke them itself instead of only the user. User request: "remove disable model invokation header from commands". Both plugins bumped to 1.1.0.

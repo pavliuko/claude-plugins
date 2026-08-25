@@ -16,12 +16,13 @@
 #          files  — rules.json in the user and/or project scope (see lib.sh)
 # Outputs: stdout — JSON envelope with hookSpecificOutput.additionalContext,
 #                   or nothing at all when no skill is required
-#          files  — skill-suggestion.log in each scope that has a rules.json
+#          files  — each scope's activation log (default skill-suggestion.log next to its rules.json; see config.logPath / config.logActivations)
 # Exit:    always 0 — never blocks session startup.
 
 source "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
 
 log_line "[$(date '+%Y-%m-%d %H:%M:%S')] Session start ($(echo "$EVENT_DATA" | jq -r '.source // "?"')): delivering required skills"
+warn_unknown_config
 
 REQUIRED_SKILLS=()
 while IFS= read -r skill; do

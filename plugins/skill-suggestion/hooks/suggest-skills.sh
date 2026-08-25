@@ -16,7 +16,7 @@
 # Outputs: stdout — JSON envelope with hookSpecificOutput.additionalContext
 #                   (when nothing matches, a systemMessage-only envelope tells
 #                   the user; the model context is untouched)
-#          files  — skill-suggestion.log in each scope that has a rules.json
+#          files  — each scope's activation log (default skill-suggestion.log next to its rules.json; see config.logPath / config.logActivations)
 # Exit:    always 0 — never blocks the prompt.
 
 source "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
@@ -25,6 +25,7 @@ USER_PROMPT=$(echo "$EVENT_DATA" | jq -r '.prompt // empty' 2>/dev/null)
 [ -z "$USER_PROMPT" ] && exit 0
 
 log_line "[$(date '+%Y-%m-%d %H:%M:%S')] Suggesting skills for prompt: ${USER_PROMPT:0:80}"
+warn_unknown_config
 
 # Lowercase copy used by every case-insensitive substring/regex match below.
 PROMPT_LOWER=$(echo "$USER_PROMPT" | tr '[:upper:]' '[:lower:]')

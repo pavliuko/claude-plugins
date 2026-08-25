@@ -32,28 +32,6 @@ if [ ! -f "$USER_RULES" ] && [ ! -f "$PROJECT_RULES" ]; then
     exit 0
 fi
 
-# Log next to each scope's rules file: the user log when user rules exist,
-# the project log when project rules exist — both when both do. A scope
-# without rules gets no log, so a user-scope-only setup never creates
-# .claude/ directories inside arbitrary projects.
-USER_LOG=""
-PROJECT_LOG=""
-if [ -f "$USER_RULES" ]; then
-    USER_LOG="$USER_DATA_DIR/skill-suggestion.log"
-    mkdir -p "$USER_DATA_DIR"
-fi
-if [ -f "$PROJECT_RULES" ]; then
-    PROJECT_LOG="$PROJECT_DATA_DIR/skill-suggestion.log"
-    mkdir -p "$PROJECT_DATA_DIR"
-fi
-
-# Appends a line to every active scope log.
-log_line() {
-    [ -n "$USER_LOG" ] && echo "$1" >> "$USER_LOG"
-    [ -n "$PROJECT_LOG" ] && echo "$1" >> "$PROJECT_LOG"
-    return 0
-}
-
 # Emits a scope's rules JSON, treating a missing or malformed file as an
 # empty ruleset so one broken scope never takes down the other.
 read_rules() {
@@ -62,6 +40,70 @@ read_rules() {
     else
         echo '{}'
     fi
+}
+
+# Resolves one scope's log file from that scope's own rules.json — not from
+# the merged config, so a project can neither silence nor redirect the user
+# log: each scope owns its trace. Prints nothing (no log) when the scope has
+# no rules or sets `config.logActivations: false`.
+#   $1 rules file
+#   $2 scope root — a relative `config.logPath` resolves against it
+#   $3 default logPath, relative to $2 (next to the scope's rules.json)
+# `~/` and absolute paths are honoured as written. The directory is created
+# only when the log is actually enabled, so a user-scope-only setup still
+# never creates .claude/ directories inside arbitrary projects.
+resolve_log() {
+    local rules=$1 root=$2 default=$3 enabled path
+    [ -f "$rules" ] || return 0
+    # Not `// true`: jq's alternative operator treats false as missing.
+    enabled=$(read_rules "$rules" | jq -r '.config.logActivations | if . == false then "false" else "true" end')
+    [ "$enabled" = "false" ] && return 0
+    path=$(read_rules "$rules" | jq -r --arg default "$default" '.config.logPath // $default')
+    case "$path" in
+        /*) ;;
+        "~/"*) path="$HOME/${path#\~/}" ;;
+        *) path="$root/$path" ;;
+    esac
+    mkdir -p "$(dirname "$path")"
+    echo "$path"
+}
+
+USER_LOG=$(resolve_log "$USER_RULES" "$HOME/.claude" "skill-suggestion/skill-suggestion.log")
+PROJECT_LOG=$(resolve_log "$PROJECT_RULES" "$PROJECT_DIR" ".claude/skill-suggestion/skill-suggestion.log")
+
+# Appends a line to every active scope log.
+log_line() {
+    [ -n "$USER_LOG" ] && echo "$1" >> "$USER_LOG"
+    [ -n "$PROJECT_LOG" ] && echo "$1" >> "$PROJECT_LOG"
+    return 0
+}
+
+# The config keys the hooks read. Anything else under `config` is a typo or a
+# leftover from another tool and would otherwise be ignored without a trace —
+# exactly how a dead `logPath` sat in a rules.json for months.
+KNOWN_CONFIG_KEYS='["maxSkillsPerPrompt","logActivations","logPath","scoring"]'
+KNOWN_SCORING_KEYS='["keywordWeight","intentWeight","pathWeight","confidenceThreshold","highConfidenceScore","mediumConfidenceScore"]'
+
+# Logs one warning per unknown config key in a scope's rules.json.
+#   $1 rules file   $2 scope label for the log line ("user" / "project")
+# Called by each event after its header line so the warning sits inside that
+# run's block in the log rather than above it.
+warn_unknown_config_keys() {
+    local rules=$1 scope=$2 key
+    [ -f "$rules" ] || return 0
+    while IFS= read -r key; do
+        [ -n "$key" ] && log_line "  ⚠ Unknown config key in $scope rules: $key"
+    done < <(read_rules "$rules" | jq -r \
+        --argjson top "$KNOWN_CONFIG_KEYS" --argjson scoring "$KNOWN_SCORING_KEYS" '
+        ((.config // {}) | keys[] | select(IN($top[]) | not)),
+        ((.config.scoring // {}) | keys[] | select(IN($scoring[]) | not) | "scoring." + .)
+    ')
+}
+
+# Convenience for the callers: warn for both scopes in one line.
+warn_unknown_config() {
+    warn_unknown_config_keys "$USER_RULES" "user"
+    warn_unknown_config_keys "$PROJECT_RULES" "project"
 }
 
 # Merge the two scopes into a single rules document that the rest of the
