@@ -17,7 +17,6 @@ Once added, install any plugin below with `/plugin install <name>@pavliuko`.
 | [`swift-concurrency-reviewer`](plugins/swift-concurrency-reviewer/README.md) | Reviews Swift PRs for concurrency issues. Has `learn` and `concise` output modes. |
 | [`skill-suggestion`](plugins/skill-suggestion/README.md) | `UserPromptSubmit` hook that scores your prompt against project-defined skill triggers and injects a ranked suggestion banner into Claude's context. |
 | [`building-skills`](plugins/building-skills/SKILL.md) | Authoring guide for creating and editing project-level Claude Code skills and slash commands. |
-| [`reviewing`](plugins/reviewing/skills/reviewing/SKILL.md) | Scope-aware code and document review. Asks for scope, applies confidence-rated findings, and loads project rules from `.claude/reviewing-instructions/`. |
 | [`explaining`](plugins/explaining/skills/explaining/SKILL.md) | Explains anything — code, concepts, systems, processes — with an ASCII diagram, a step-by-step walkthrough, and a gotcha. |
 | [`cmp`](plugins/cmp/commands/cmp.md) | Shorthand slash command for "commit and push" — commits pending changes and pushes to the remote. |
 | [`interviewme`](plugins/interviewme/commands/interviewme.md) | Shorthand slash command that asks Claude to interview you with any questions it might have. |
@@ -28,10 +27,16 @@ Once added, install any plugin below with `/plugin install <name>@pavliuko`.
 /plugin install swift-concurrency-reviewer@pavliuko
 /plugin install skill-suggestion@pavliuko
 /plugin install building-skills@pavliuko
-/plugin install reviewing@pavliuko
 /plugin install explaining@pavliuko
 /plugin install cmp@pavliuko
 /plugin install interviewme@pavliuko
+```
+
+`building-skills`, `cmp`, `explaining`, and `interviewme` depend on the [`asd-ste100`](https://github.com/danyuchn/asd-ste100-skill)
+plugin from another marketplace. Add that marketplace once before you install them:
+
+```
+/plugin marketplace add danyuchn/asd-ste100-skill
 ```
 
 See each plugin's README for prerequisites, configuration, and usage.
@@ -54,7 +59,6 @@ Not everything Claude Code can be configured with fits the plugin format.
 │   ├── swift-concurrency-reviewer/
 │   ├── skill-suggestion/
 │   ├── building-skills/
-│   ├── reviewing/
 │   ├── explaining/
 │   ├── cmp/
 │   └── interviewme/

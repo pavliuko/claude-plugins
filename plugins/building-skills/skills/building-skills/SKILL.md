@@ -31,6 +31,7 @@ Files in `.claude/commands/` keep working but the docs recommend skills for new 
 2. **SKILL.md body stays under ~500 lines.** Push deep material into `references/<topic>.md`. Keep reference links **one level deep from SKILL.md** — Claude may only partially read nested references.
 3. **Don't invent new top-level directories.** Skills live in `.claude/skills/<name>/`. Single-file skills live in `.claude/commands/<name>.md`. Skill-specific reference and template material lives inside the skill's own folder. Don't put skill-specific helper docs in `docs/` or `agent-rules/` unless the user asks. (Truly cross-cutting content shared by multiple skills is the exception — see [Progressive Disclosure](#progressive-disclosure-the-whole-point).)
 4. **Ask, don't infer.** The two real decisions (layout and invocation mode — see [The Two Axes](#the-two-axes)) belong to the user. If the user's request is ambiguous on either axis, on the name, on scope, or on overwrite-vs-new, **stop and ask** with concrete options.
+5. **ALWAYS run the `asd-ste100:asd-ste100` skill on each text that you add or change in a skill.** Use the strict mode. A skill is an instruction that an agent reads, and a sentence with two meanings causes a wrong action. If the change is inside a larger block, such as a numbered rule or a code example with its text, run the skill on the full block. Keep each fact, condition, and hedge. Do not add facts.
 
 ## References & Templates
 
@@ -227,6 +228,7 @@ Self-review:
 - [ ] No nested references (refs don't point to other refs)
 - [ ] No AI-attribution / time-sensitive wording
 - [ ] Critical rules are concrete and enforceable
+- [ ] New and changed text went through `asd-ste100:asd-ste100` in the strict mode
 - [ ] Common Mistakes section is present but EMPTY at scaffold time (entries get added later from real failures, not invented)
 ```
 

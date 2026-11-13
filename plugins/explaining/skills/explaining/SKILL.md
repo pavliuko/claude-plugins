@@ -10,3 +10,8 @@ When explaining anything, always include:
 3. **Highlight a gotcha**: What's a common mistake or misconception?
 
 Keep explanations conversational.
+
+If you write the explanation in English, run the `asd-ste100:asd-ste100` skill
+on its text before you send it. Use the STE-flavored mode. Use the text that the
+skill returns. Do not change the diagram, the code, or the technical terms. If
+the explanation is in a different language, do not run the skill.

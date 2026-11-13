@@ -1,6 +1,6 @@
 {
   "name": "interviewme",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "Shorthand slash command that asks Claude to interview you with any questions it might have.",
   "author": {
     "name": "pavliuko",
@@ -15,5 +15,11 @@
     "slash-command",
     "productivity"
   ],
-  "category": "productivity"
+  "category": "productivity",
+  "dependencies": [
+    {
+      "name": "asd-ste100",
+      "marketplace": "asd-ste100-skill"
+    }
+  ]
 }

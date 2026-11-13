@@ -1,6 +1,6 @@
 {
   "name": "building-skills",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Authoring guide for creating and editing project-level Claude Code skills and slash commands.",
   "author": {
     "name": "pavliuko",
@@ -14,5 +14,11 @@
     "building",
     "productivity"
   ],
-  "category": "productivity"
+  "category": "productivity",
+  "dependencies": [
+    {
+      "name": "asd-ste100",
+      "marketplace": "asd-ste100-skill"
+    }
+  ]
 }

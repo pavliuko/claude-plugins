@@ -1,6 +1,6 @@
 {
   "name": "pavliuko",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "owner": {
     "name": "pavliuko",
     "email": "pavliuk.aleksandr@gmail.com"
@@ -8,6 +8,9 @@
   "metadata": {
     "description": "Claude Code plugins by pavliuko"
   },
+  "allowCrossMarketplaceDependenciesOn": [
+    "asd-ste100-skill"
+  ],
   "plugins": [
     {
       "name": "swift-concurrency-reviewer",
@@ -54,7 +57,7 @@
       "name": "building-skills",
       "source": "./plugins/building-skills",
       "description": "Authoring guide for creating and editing project-level Claude Code skills and slash commands.",
-      "version": "1.0.0",
+      "version": "1.1.0",
       "author": {
         "name": "pavliuko",
         "email": "pavliuk.aleksandr@gmail.com"
@@ -70,30 +73,10 @@
       "category": "productivity"
     },
     {
-      "name": "reviewing",
-      "source": "./plugins/reviewing",
-      "description": "Scope-aware code and document review. Asks the user what to review, applies confidence-rated findings, and plugs in project-specific rules from .claude/reviewing-instructions/.",
-      "version": "1.0.0",
-      "author": {
-        "name": "pavliuko",
-        "email": "pavliuk.aleksandr@gmail.com"
-      },
-      "repository": "https://github.com/pavliuko/claude-plugins",
-      "license": "MIT",
-      "keywords": [
-        "code-review",
-        "review",
-        "pr-review",
-        "quality",
-        "productivity"
-      ],
-      "category": "development"
-    },
-    {
       "name": "explaining",
       "source": "./plugins/explaining",
-      "description": "Explains anything \u2014 code, concepts, systems, processes \u2014 with an ASCII diagram, a step-by-step walkthrough, and a gotcha to watch out for.",
-      "version": "1.0.0",
+      "description": "Explains anything — code, concepts, systems, processes — with an ASCII diagram, a step-by-step walkthrough, and a gotcha to watch out for.",
+      "version": "1.1.0",
       "author": {
         "name": "pavliuko",
         "email": "pavliuk.aleksandr@gmail.com"
@@ -112,8 +95,8 @@
     {
       "name": "cmp",
       "source": "./plugins/cmp",
-      "description": "Shorthand slash command for \"commit and push\" \u2014 commits pending changes and pushes to the remote.",
-      "version": "1.0.0",
+      "description": "Shorthand slash command for \"commit and push\" — commits pending changes and pushes to the remote.",
+      "version": "1.2.0",
       "author": {
         "name": "pavliuko",
         "email": "pavliuk.aleksandr@gmail.com"
@@ -133,7 +116,7 @@
       "name": "interviewme",
       "source": "./plugins/interviewme",
       "description": "Shorthand slash command that asks Claude to interview you with any questions it might have.",
-      "version": "1.0.0",
+      "version": "1.2.0",
       "author": {
         "name": "pavliuko",
         "email": "pavliuk.aleksandr@gmail.com"

@@ -14,6 +14,31 @@ Format:
 
 ---
 
+## 2026-11-13 [explaining, interviewme] — 1.1.0, 1.2.0
+
+- `explaining` and `interviewme` depend on the `asd-ste100` plugin and run the skill in the STE-flavored mode on the explanation and on the questions. User request: "explaining? interview me?", after the first pass had left both out. That pass judged chat-only text out of scope and saw a conflict with the "conversational" tone of `explaining`. But the STE-flavored mode is the one asd-ste100 recommends for explanatory prose, and a non-native reader parses the chat text too.
+- Both run the skill only when the text is in English. STE is a standard for English, and the user often writes in other languages. `explaining` keeps its diagram, code, and technical terms as they are.
+- `interviewme` was `1.1.0` in `plugin.json` and `1.0.0` in the marketplace entry. Both now say `1.2.0`.
+
+## 2026-11-13 [cmp] — 1.2.0
+
+- `cmp` runs the `asd-ste100` skill on the commit message in the STE-flavored mode, and depends on the `asd-ste100` plugin from the `asd-ste100-skill` marketplace. User request: "all other plugins where this makes sense should use this skill too". `cmp` writes a commit message. `swift-concurrency-reviewer` shows its findings only in the chat. `skill-suggestion` hooks print fixed strings, which the new `CLAUDE.md` rule covers at authoring time.
+- The marketplace entry said `1.0.0` while `plugin.json` said `1.1.0`. Both now say `1.2.0`.
+
+## 2026-11-13 [reviewing] — removed
+
+- The `reviewing` plugin is deleted: its folder, its marketplace entry, and its README row, install line, and tree entry. User request: "delete reviewing skill".
+- Marketplace version 1.1.0 → 2.0.0, because a plugin is gone.
+
+## 2026-11-13 [repo] — CLAUDE.md
+
+- `CLAUDE.md` gains "Writing Instructions for AI Agents": each added or changed text in a skill, command, agent, or hook message goes through `asd-ste100` in the strict mode, with the full block around a change. A plugin that writes text for people depends on `asd-ste100` and uses the STE-flavored mode. User request: "update claude.md to use this skill".
+
+## 2026-11-13 [building-skills] — 1.1.0
+
+- `building-skills` depends on the `asd-ste100` plugin from its upstream marketplace `asd-ste100-skill` (https://github.com/danyuchn/asd-ste100-skill, MIT). User request: "додай asd-ste100 як залежність до building-skills" (add asd-ste100 as a dependency of building-skills). The root `marketplace.json` lists `asd-ste100-skill` in `allowCrossMarketplaceDependenciesOn`; without it Claude Code installs the plugin without the dependency and the plugin then fails to load. Upstream has no git tags, so the dependency has no version range and follows upstream `main`. Users probably need `/plugin marketplace add danyuchn/asd-ste100-skill` once. Not yet tested with a real install.
+- New Critical Rule 5 and a self-review item: each added or changed text in a skill goes through `asd-ste100:asd-ste100` in the strict mode, with the full block around a change. A dependency that no step calls does nothing. The rule matches the one the user set for the `agents-market` plugins repo.
+
 ## 2026-08-25 [skill-suggestion] — 2.1.0
 
 - `config.logActivations` and `config.logPath` are now real. Both keys sat in a consumer `rules.json` (`BulkSource-iOS-SECOND/.claude/skill-suggestion/rules.json`, pointing at `.claude/logs/skill-suggestion.log`) while the hook kept writing `.claude/skill-suggestion/skill-suggestion.log` — neither the plugin nor the pre-plugin local hook it replaced (consumer commit `f9a0e77b`) had ever read them. Reported by a peer Claude session in that repo; user chose "implement both keys" over deleting the dead config.
