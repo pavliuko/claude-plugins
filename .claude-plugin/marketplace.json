@@ -1,6 +1,6 @@
 {
   "name": "pavliuko",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "owner": {
     "name": "pavliuko",
     "email": "pavliuk.aleksandr@gmail.com"
@@ -127,6 +127,46 @@
         "interview",
         "questions",
         "clarification",
+        "slash-command",
+        "productivity"
+      ],
+      "category": "productivity"
+    },
+    {
+      "name": "rollbackredo",
+      "source": "./plugins/rollbackredo",
+      "description": "Shorthand slash command that asks Claude to revert its changes and do the work again from the start. Claude uses the context that it collected.",
+      "version": "1.0.0",
+      "author": {
+        "name": "pavliuko",
+        "email": "pavliuk.aleksandr@gmail.com"
+      },
+      "repository": "https://github.com/pavliuko/claude-plugins",
+      "license": "MIT",
+      "keywords": [
+        "redo",
+        "rollback",
+        "from-scratch",
+        "slash-command",
+        "productivity"
+      ],
+      "category": "productivity"
+    },
+    {
+      "name": "nopatch",
+      "source": "./plugins/nopatch",
+      "description": "Shorthand slash command that asks Claude to replace its quick patches with a more fundamental approach.",
+      "version": "1.0.0",
+      "author": {
+        "name": "pavliuko",
+        "email": "pavliuk.aleksandr@gmail.com"
+      },
+      "repository": "https://github.com/pavliuko/claude-plugins",
+      "license": "MIT",
+      "keywords": [
+        "refactor",
+        "root-cause",
+        "quick-fix",
         "slash-command",
         "productivity"
       ],

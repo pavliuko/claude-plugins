@@ -1,0 +1,19 @@
+{
+  "name": "rollbackredo",
+  "version": "1.0.0",
+  "description": "Shorthand slash command that asks Claude to revert its changes and do the work again from the start. Claude uses the context that it collected.",
+  "author": {
+    "name": "pavliuko",
+    "email": "pavliuk.aleksandr@gmail.com"
+  },
+  "repository": "https://github.com/pavliuko/claude-plugins",
+  "license": "MIT",
+  "keywords": [
+    "redo",
+    "rollback",
+    "from-scratch",
+    "slash-command",
+    "productivity"
+  ],
+  "category": "productivity"
+}

@@ -20,6 +20,8 @@ Once added, install any plugin below with `/plugin install <name>@pavliuko`.
 | [`explaining`](plugins/explaining/skills/explaining/SKILL.md) | Explains anything — code, concepts, systems, processes — with an ASCII diagram, a step-by-step walkthrough, and a gotcha. |
 | [`cmp`](plugins/cmp/commands/cmp.md) | Shorthand slash command for "commit and push" — commits pending changes and pushes to the remote. |
 | [`interviewme`](plugins/interviewme/commands/interviewme.md) | Shorthand slash command that asks Claude to interview you with any questions it might have. |
+| [`rollbackredo`](plugins/rollbackredo/commands/rollbackredo.md) | Shorthand slash command that asks Claude to roll back its changes and redo everything from scratch with the context it collected. |
+| [`nopatch`](plugins/nopatch/commands/nopatch.md) | Shorthand slash command that asks Claude to replace its quick patches with a more fundamental approach. |
 
 ### Install
 
@@ -30,6 +32,8 @@ Once added, install any plugin below with `/plugin install <name>@pavliuko`.
 /plugin install explaining@pavliuko
 /plugin install cmp@pavliuko
 /plugin install interviewme@pavliuko
+/plugin install rollbackredo@pavliuko
+/plugin install nopatch@pavliuko
 ```
 
 `building-skills`, `cmp`, `explaining`, and `interviewme` depend on the [`asd-ste100`](https://github.com/danyuchn/asd-ste100-skill)
@@ -61,7 +65,9 @@ Not everything Claude Code can be configured with fits the plugin format.
 │   ├── building-skills/
 │   ├── explaining/
 │   ├── cmp/
-│   └── interviewme/
+│   ├── interviewme/
+│   ├── rollbackredo/
+│   └── nopatch/
 ├── statusline/              # standalone status line script (not a plugin)
 └── CLAUDE.md                # repo-wide guidance (naming, git rules)
 ```

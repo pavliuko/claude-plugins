@@ -14,6 +14,12 @@ Format:
 
 ---
 
+## 2026-11-25 [rollbackredo, nopatch] — 1.0.0
+
+- New single-command plugins `/rollbackredo` and `/nopatch`, packaged like `interviewme`. User request: "same as interview me command i want 2 new commands". The body of each command is the user's text, word for word: `/rollbackredo` says "Now roll back your changes and redo everything from scratch, using the context you collected while working on it." `/nopatch` says "The changes you made look like quick patches to me. Can you redo it with a more fundamental approach?" The `asd-ste100` skill ran only on the descriptions, because the user gave the exact body text. The names come from the user: first "names must be: rollbackanddoagain, fundamentalapproachnotpatch", then "comeup with shorter names". The user picked `rollbackredo` and `nopatch` from the suggested names.
+- Neither plugin depends on `asd-ste100`. Both make Claude change code. Neither writes text for people.
+- Marketplace version 2.0.0 → 2.1.0, because two plugins are new.
+
 ## 2026-11-13 [explaining, interviewme] — 1.1.0, 1.2.0
 
 - `explaining` and `interviewme` depend on the `asd-ste100` plugin and run the skill in the STE-flavored mode on the explanation and on the questions. User request: "explaining? interview me?", after the first pass had left both out. That pass judged chat-only text out of scope and saw a conflict with the "conversational" tone of `explaining`. But the STE-flavored mode is the one asd-ste100 recommends for explanatory prose, and a non-native reader parses the chat text too.
