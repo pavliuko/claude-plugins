@@ -3,7 +3,7 @@
 A two-line Claude Code [status line](https://code.claude.com/docs/en/statusline).
 
 ```
-📁 claude-plugins | 🌿 feat/15101-role-respecting-client ~11 | 🔗 #1234
+📁 /Users/you/Code/claude-plugins | ↗ VS Code | 🌿 feat/15101-role-respecting-client ~11 | 🔗 #1234
 🤖 Opus 5 ⚡ high | 💽 ███░░░░░░░ 38% context | ⛽ ███████░░░ 76% left · resets in 2h 41m | 👤 Sasha Pavliuk
 ```
 
@@ -12,7 +12,8 @@ you're spending** — it changes as the session burns on.
 
 | Line | Section | Shows | Absent when |
 | --- | --- | --- | --- |
-| 1 | 📁 directory | basename of `workspace.current_dir`, in cyan | never |
+| 1 | 📁 directory | full path of `workspace.current_dir`, in cyan | never |
+| 1 | ↗ VS Code | OSC 8 hyperlink to `vscode://file<dir>`; cmd/ctrl+click opens the directory in VS Code | never |
 | 1 | 🌿 git | branch, `+staged` (green), `~modified` (yellow) | not a git repository |
 | 1 | 🔗 PR | `pr.number` as an OSC 8 hyperlink | no open PR for the branch |
 | 2 | 🤖 model | `model.display_name` | never |
@@ -59,8 +60,10 @@ granularity.
 ## Requirements
 
 - `jq` — `brew install jq`
-- A terminal with OSC 8 hyperlink support for the clickable PR (iTerm2, Kitty, WezTerm; **not**
-  Terminal.app). Without it the `#1234` still renders, just not clickable.
+- A terminal with OSC 8 hyperlink support for the clickable PR and VS Code links (iTerm2, Kitty,
+  WezTerm; **not** Terminal.app). Without it the `#1234` and `↗ VS Code` still render, just not
+  clickable.
+- VS Code installed, so the OS routes `vscode://` URLs to it.
 
 ## Notes
 

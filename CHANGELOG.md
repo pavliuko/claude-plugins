@@ -14,6 +14,10 @@ Format:
 
 ---
 
+## 2026-11-27 [statusline]
+
+- Line 1 now shows the full path of `workspace.current_dir` instead of its basename, followed by a `↗ VS Code` segment. The segment is an OSC 8 hyperlink to `vscode://file<dir>`, so cmd/ctrl+click opens the directory in VS Code. Each path component is percent-encoded with `jq @uri`, so spaces and `#` do not break the URL. User request: "я хочу що б в моємо ботом барі клод кода відібражався повний шлях до папки і була кнопка котра би відкривала папку в vscode".
+
 ## 2026-11-25 [rollbackredo, nopatch] — 1.0.0
 
 - New single-command plugins `/rollbackredo` and `/nopatch`, packaged like `interviewme`. User request: "same as interview me command i want 2 new commands". The body of each command is the user's text, word for word: `/rollbackredo` says "Now roll back your changes and redo everything from scratch, using the context you collected while working on it." `/nopatch` says "The changes you made look like quick patches to me. Can you redo it with a more fundamental approach?" The `asd-ste100` skill ran only on the descriptions, because the user gave the exact body text. The names come from the user: first "names must be: rollbackanddoagain, fundamentalapproachnotpatch", then "comeup with shorter names". The user picked `rollbackredo` and `nopatch` from the suggested names.

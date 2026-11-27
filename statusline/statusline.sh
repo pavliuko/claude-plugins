@@ -1,12 +1,14 @@
 #!/bin/bash
 # Claude Code status line.
-#   line 1: dir, git branch + dirty counts, clickable PR link
+#   line 1: full dir path, clickable "open in VS Code" link, git branch + dirty counts, clickable PR link
 #   line 2: model/effort, context bar, 5h fuel gauge + reset countdown, account
 input=$(cat)
 
 MODEL=$(jq -r '.model.display_name' <<<"$input")
 EFFORT=$(jq -r '.effort.level // empty' <<<"$input")
 DIR=$(jq -r '.workspace.current_dir' <<<"$input")
+# Percent-encode each path component for the vscode:// URL; '/' stays as the separator.
+DIR_URI=$(jq -r '.workspace.current_dir | split("/") | map(@uri) | join("/")' <<<"$input")
 SESSION_ID=$(jq -r '.session_id' <<<"$input")
 PCT=$(jq -r '.context_window.used_percentage // 0' <<<"$input" | cut -d. -f1)
 FIVE_H=$(jq -r '.rate_limits.five_hour.used_percentage // empty' <<<"$input")
@@ -77,10 +79,14 @@ if [ -n "$BRANCH" ]; then
   [ "${MODIFIED:-0}" -gt 0 ] 2>/dev/null && GIT_SEGMENT="${GIT_SEGMENT} ${YELLOW}~${MODIFIED}${RESET}"
 fi
 
+OSC8_OPEN=$'\033]8;;'; OSC8_TEXT=$'\a'; OSC8_CLOSE=$'\033]8;;\a'
+
+# --- "open in VS Code" button: an OSC 8 hyperlink (cmd/ctrl+click) to the vscode:// URL handler
+VSCODE_SEGMENT=" ${SEP} ${BLUE}${OSC8_OPEN}vscode://file${DIR_URI}${OSC8_TEXT}↗ VS Code${OSC8_CLOSE}${RESET}"
+
 # --- PR, as an OSC 8 hyperlink (cmd/ctrl+click); absent until one is open
 PR_SEGMENT=""
 if [ -n "$PR_NUMBER" ] && [ -n "$PR_URL" ]; then
-  OSC8_OPEN=$'\033]8;;'; OSC8_TEXT=$'\a'; OSC8_CLOSE=$'\033]8;;\a'
   PR_SEGMENT=" ${SEP} 🔗 ${BLUE}${OSC8_OPEN}${PR_URL}${OSC8_TEXT}#${PR_NUMBER}${OSC8_CLOSE}${RESET}"
 fi
 
@@ -113,5 +119,5 @@ fi
 ACCOUNT_SEGMENT=""
 [ -n "$ACCOUNT" ] && ACCOUNT_SEGMENT=" ${SEP} 👤 ${DIM}${ACCOUNT}${RESET}"
 
-printf '%s\n' "📁 ${CYAN}${DIR##*/}${RESET}${GIT_SEGMENT}${PR_SEGMENT}"
+printf '%s\n' "📁 ${CYAN}${DIR}${RESET}${VSCODE_SEGMENT}${GIT_SEGMENT}${PR_SEGMENT}"
 printf '%s\n' "${MODEL_SEGMENT} ${SEP} 💽 $(render_bar "$PCT" "$PCT") ${PCT}% context${LIMIT_SEGMENT}${ACCOUNT_SEGMENT}"
